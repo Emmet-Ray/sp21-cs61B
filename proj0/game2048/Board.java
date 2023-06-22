@@ -91,6 +91,7 @@ public class Board implements Iterable<Tile> {
         if (tile.col() == pcol && tile.row() == prow) {
             return false;
         }
+        //System.out.println("col " + col + " row " + row);
         Tile tile1 = vtile(col, row, viewPerspective);
         values[tile.col()][tile.row()] = null;
 

@@ -113,6 +113,14 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        int size = this.board.size();
+        board.setViewingPerspective(side);
+        // only up direction
+        for (int col = 0; col < size; col ++) {
+            if (perColumn(col))
+                changed = true;
+        }
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -121,6 +129,53 @@ public class Model extends Observable {
         return changed;
     }
 
+    private boolean perColumn(int col) {
+        boolean changed;
+        changed = false;
+        int size = this.board.size();
+        int merged[] = new int[size];
+        // for every column, from the last but one row
+        for (int row = size - 2; row >= 0; row--) {
+            Tile t = this.board.tile(col, row);
+            if (t != null) {
+                Tile destination = null;
+                int i;
+                for (i = row + 1; i < size; i++) {
+                    destination = this.board.tile(col, i);
+                    if (destination != null)
+                        break;
+                }
+                // destination (col, i) is not null
+                if (destination != null) {
+                    // merge operation
+                    if (t.value() == destination.value()) {
+                        if (merged[i] == 0) {
+                            merged[i] = 1;
+                            this.board.move(col, i, t);
+                            this.score += 2 * t.value();
+                        } else {
+                            this.board.move(col, i -1, t);
+                        }
+                    } else {
+                        this.board.move(col, i -1, t);
+                    }
+                } else {
+                    this.board.move(col, size - 1, t);
+                }
+
+                changed = true;
+            }
+            /*
+            Tile t = this.board.tile(col, row);
+            if (t != null) {
+                this.board.move(col, 3, t);
+                this.score++;
+                changed = true;
+            }
+             */
+        }
+        return changed;
+    }
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
      */
