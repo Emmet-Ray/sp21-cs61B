@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author TODO:  mengtaoli
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -137,18 +137,32 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        int size = b.size();
+        int row, col;
+        for (row = 0; row < size; row++) {
+            for (col = 0; col < size; col++)
+                if (b.tile(col, row) == null)
+                    return true;
+        }
         return false;
     }
-
+    private static boolean exist(Board b, int x) {
+        int size = b.size();
+        int row, col;
+        for (row = 0; row < size; row++) {
+            for (col = 0; col < size; col++)
+                if (b.tile(col, row) != null && b.tile(col, row).value() == x)
+                    return true;
+        }
+        return false;
+    }
     /**
      * Returns true if any tile is equal to the maximum valid value.
      * Maximum valid value is given by MAX_PIECE. Note that
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        return exist(b, MAX_PIECE);
     }
 
     /**
@@ -158,10 +172,67 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+        if (emptySpaceExists(b))
+            return true;
+        int size = b.size();
+        int row, col;
+        for (row = 0; row < size; row++) {
+            for (col = 0; col < size; col++) {
+                if(helperOfatLeastOneMoveExists(b, row, col))
+                    return true;
+            }
+        }
         return false;
     }
 
+    /**
+     *
+     * @param b
+     * @param row
+     * @param col
+     * @return If tile(row, col) has at least one neighbourhood that has same value with it, return true; otherwise, return false.
+     */
+    private static boolean helperOfatLeastOneMoveExists(Board b, int row, int col) {
+        int size = b.size();
+        int value = b.tile(col, row).value();
+        int i, j;
+
+        i = row;
+        j = col - 1;
+        if (i >=0 && i < size && j >=0 && j < size)
+           if (b.tile(j, i).value() == value)
+               return true;
+
+        j = col + 1;
+        if (i >=0 && i < size && j >=0 && j < size)
+            if (b.tile(j, i).value() == value)
+                return true;
+
+        i = row - 1;
+        j = col;
+        if (i >=0 && i < size && j >=0 && j < size)
+            if (b.tile(j, i).value() == value)
+                return true;
+
+        i = row + 1;
+        if (i >=0 && i < size && j >=0 && j < size)
+            if (b.tile(j, i).value() == value)
+                return true;
+       /*
+        for(int i = row - 1; i <= row + 1; i++) {
+            if(i >= size || i < 0)
+                continue;
+
+            for(int j = col - 1; j <= col + 1; j++) {
+                if (j >= 0 && j < size) {
+                    // exclude tile(row, col)
+                    if(!(i == row && j == col) && b.tile(j, i).value() == value)
+                        return true;
+                }
+            }
+        }*/
+        return false;
+    }
 
     @Override
      /** Returns the model as a string, used for debugging. */
