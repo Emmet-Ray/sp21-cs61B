@@ -160,25 +160,10 @@ public class Model extends Observable {
     private boolean moveOneTile(int col, int row, int[] merged) {
         Tile destination, current;
         current = this.board.tile(col, row);
-
+        destination = null;
         // find the "destination" (the row) i.e. the one that is not null for the tile in (col, row)
-        destination = findDestination(col, row);
-        // move to destination position, may change may not change, BUT if not change, it doesn't matter if we return true(changed)
-        moveToDestination(destination, current, merged, col);
-
-        return true;
-    }
-
-    /**
-     *
-     * @param col
-     * @param row
-     * @return return the destination Tile in the col of the tile in (col, row)
-     */
-    private Tile findDestination(int col, int row) {
         int i;
         int size = this.board.size();
-        Tile destination = null;
 
         for (i = row + 1; i < size; i++) {
             destination = this.board.tile(col, i);
@@ -186,16 +171,18 @@ public class Model extends Observable {
                 break;
         }
 
-        return destination;
+        // move to destination position, may change may not change, BUT if not change, it doesn't matter if we return true(changed)
+        moveToDestination(destination, current, merged, col, i);
+
+        return true;
     }
 
 
-    private void moveToDestination(Tile destination, Tile current, int[] merged, int col) {
+
+    private void moveToDestination(Tile destination, Tile current, int[] merged, int col, int destinationRow) {
         int size = this.board.size();
-        int destinationRow;
         if (destination != null) {
             // merge operation
-            destinationRow = destination.row();
             if (current.value() == destination.value()) {
                 if (merged[destinationRow] == 0) {
                     merged[destinationRow] = 1;
