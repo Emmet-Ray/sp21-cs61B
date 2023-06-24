@@ -129,53 +129,89 @@ public class Model extends Observable {
         return changed;
     }
 
+    /**
+     *
+     * @param col the particular column
+     * @return true if the column is changed, otherwise false.
+     */
     private boolean perColumn(int col) {
         boolean changed;
         changed = false;
         int size = this.board.size();
-        int merged[] = new int[size];
-        // for every column, from the last but one row
+        // every column needs an array to log if some tile is a merged result.
+        int[] merged = new int[size];
+
+        // operation for every tile but the last one in the column
         for (int row = size - 2; row >= 0; row--) {
             Tile t = this.board.tile(col, row);
             if (t != null) {
-                Tile destination = null;
-                int i;
-                for (i = row + 1; i < size; i++) {
-                    destination = this.board.tile(col, i);
-                    if (destination != null)
-                        break;
-                }
-                // destination (col, i) is not null
-                if (destination != null) {
-                    // merge operation
-                    if (t.value() == destination.value()) {
-                        if (merged[i] == 0) {
-                            merged[i] = 1;
-                            this.board.move(col, i, t);
-                            this.score += 2 * t.value();
-                        } else {
-                            this.board.move(col, i -1, t);
-                        }
-                    } else {
-                        this.board.move(col, i -1, t);
-                    }
-                } else {
-                    this.board.move(col, size - 1, t);
-                }
-
-                changed = true;
+                if (moveOneTile(col, row, merged))
+                    changed = true;
             }
-            /*
-            Tile t = this.board.tile(col, row);
-            if (t != null) {
-                this.board.move(col, 3, t);
-                this.score++;
-                changed = true;
-            }
-             */
         }
         return changed;
     }
+
+    /**
+     * @param col
+     * @param row
+     * @return operate on the tile(col, row) that is not null
+     */
+    private boolean moveOneTile(int col, int row, int[] merged) {
+        Tile destination, current;
+        current = this.board.tile(col, row);
+
+        // find the "destination" (the row) i.e. the one that is not null for the tile in (col, row)
+        destination = findDestination(col, row);
+        // move to destination position, may change may not change, BUT if not change, it doesn't matter if we return true(changed)
+        moveToDestination(destination, current, merged, col);
+
+        return true;
+    }
+
+    /**
+     *
+     * @param col
+     * @param row
+     * @return return the destination Tile in the col of the tile in (col, row)
+     */
+    private Tile findDestination(int col, int row) {
+        int i;
+        int size = this.board.size();
+        Tile destination = null;
+
+        for (i = row + 1; i < size; i++) {
+            destination = this.board.tile(col, i);
+            if (destination != null)
+                break;
+        }
+
+        return destination;
+    }
+
+
+    private void moveToDestination(Tile destination, Tile current, int[] merged, int col) {
+        int size = this.board.size();
+        int destinationRow;
+        if (destination != null) {
+            // merge operation
+            destinationRow = destination.row();
+            if (current.value() == destination.value()) {
+                if (merged[destinationRow] == 0) {
+                    merged[destinationRow] = 1;
+                    this.board.move(col, destinationRow, current);
+                    this.score += 2 * current.value();
+                } else {
+                    this.board.move(col, destinationRow -1, current);
+                }
+            } else {
+                this.board.move(col, destinationRow -1, current);
+            }
+        } else {
+            this.board.move(col, size - 1, current);
+        }
+    }
+
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
      */
