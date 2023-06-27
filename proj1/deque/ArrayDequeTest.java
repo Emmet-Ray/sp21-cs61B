@@ -42,45 +42,56 @@ public class ArrayDequeTest {
     }
 
     @Test
+    public void resizeTest() {
+       int N = 100;
+       ArrayDeque<Integer> array = new ArrayDeque<>();
+       for (int i = 0; i < N; i++) {
+            if (i % 2 == 0) {
+                array.addFirst(0);
+            } else {
+                array.addLast(1);
+            }
+       }
+       assertEquals(N, array.size());
+    }
+
+    @Test
     public void randomizedAddSizeIsEmptyGetTest() {
         ArrayDeque<Integer> array = new ArrayDeque<>();
-        int N = 1000;
+        int N = 100000;
         int randomChoice;
         int randomValue;
         int cnt = 0;
+        int actual;
+        int expected;
         for (int i = 0; i < N; i++) {
-            //randomChoice = StdRandom.uniform(0, 5);
-            randomChoice = 4;
+            randomChoice = StdRandom.uniform(0, 5);
             if (randomChoice == 0) {
-                // TODO : not yet implement resize
-                //if (array.size() == 8)
-                    continue;
-                //randomValue = StdRandom.uniform(0, 100);
-                //array.addFirst(randomValue);
-                //assertEquals((long)randomValue, (long)array.get(0));
-                //cnt++;
+                randomValue = StdRandom.uniform(0, 100);
+                array.addFirst(randomValue);
+                assertEquals((long)randomValue, (long)array.get(0));
+                cnt++;
             } else if (randomChoice == 1) {
-                // TODO : not yet implement resize
-                if (array.size() == 8)
-                    continue;
-                //randomValue = StdRandom.uniform(0, 100);
-                //array.addLast(randomValue);
-                //assertEquals((long)randomValue, (long)array.get(cnt));
-                //cnt++;
+                randomValue = StdRandom.uniform(0, 100);
+                array.addLast(randomValue);
+                assertEquals((long)randomValue, (long)array.get(cnt));
+                cnt++;
             } else if (randomChoice == 2) {
                 assertEquals(cnt, array.size());
             } else if (randomChoice == 3) {
-                // remove first
-                randomValue = StdRandom.uniform(0, 100);
-                array.addFirst(randomValue);
-                int result = array.removeFirst();
-                assertEquals(randomValue, result);
+                if (array.size() != 0) {
+                    expected = array.get(0);
+                    actual = array.removeFirst();
+                    assertEquals(expected, actual);
+                    cnt--;
+                }
             } else if (randomChoice == 4) {
-                // remove last
-                randomValue = StdRandom.uniform(0, 100);
-                array.addLast(randomValue);
-                int result = array.removeLast();
-                assertEquals(randomValue, result);
+                if (array.size() != 0) {
+                    expected = array.get(array.size() - 1);
+                    actual = array.removeLast();
+                    assertEquals(expected, actual);
+                    cnt--;
+                }
             }
         }
     }
