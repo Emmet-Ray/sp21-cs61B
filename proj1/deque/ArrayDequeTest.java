@@ -26,6 +26,22 @@ public class ArrayDequeTest {
     }
 
     @Test
+    public void removeTest() {
+        ArrayDeque<Integer> array = new ArrayDeque<>();
+        int[] data = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
+        for (int i = 0; i < data.length; i++)
+            array.addFirst(data[i]);
+
+        for (int i = 0; i < data.length; i++)
+            if (i % 2 == 0) {
+                array.removeFirst();
+            } else {
+                array.removeLast();
+            }
+
+    }
+
+    @Test
     public void randomizedAddSizeIsEmptyGetTest() {
         ArrayDeque<Integer> array = new ArrayDeque<>();
         int N = 1000;
