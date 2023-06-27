@@ -120,4 +120,23 @@ public class LinkedListDequeTest {
         }
 
     }
+
+    @Test
+    public void getTest() {
+        LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
+
+        assertTrue("A newly initialized LLDeque should be empty", lld1.isEmpty());
+        lld1.addFirst("front");
+        lld1.addLast("middle");
+        lld1.addLast("back");
+
+        assertEquals("front", lld1.get(0));
+        assertEquals("front", lld1.getRecursive(0));
+
+        assertEquals("middle", lld1.get(1));
+        assertEquals("middle", lld1.getRecursive(1));
+
+        assertEquals("back", lld1.get(2));
+        assertEquals("back", lld1.getRecursive(2));
+    }
 }

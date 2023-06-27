@@ -109,4 +109,18 @@ public class LinkedListDeque<Type> {
         }
         return p.item;
     }
+
+    public Type getRecursive(int index) {
+        return helpeRecursiveGet(index, sentinel.next);
+    }
+    private Type helpeRecursiveGet(int index, TypeNode node) {
+        if (index >= size())
+            return null;
+
+        if (index == 0)
+            return node.item;
+        else {
+            return helpeRecursiveGet(index-1, node.next);
+        }
+    }
 }
