@@ -96,4 +96,34 @@ public class ArrayDequeTest {
         }
     }
 
+    @Test
+    public void testIterator() {
+        ArrayDeque<Integer> array = new ArrayDeque<>();
+        int[] data = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
+        for (int i = 0; i < data.length; i++)
+            array.addFirst(data[i]);
+
+        for (int x : array) {
+            System.out.println(x);
+        }
+        array.printDeque();
+    }
+
+    @Test
+    public void testEquals() {
+        ArrayDeque<Integer> array = new ArrayDeque<>();
+        int[] data = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
+        for (int i = 0; i < data.length; i++)
+            array.addFirst(data[i]);
+
+        ArrayDeque<Integer> array2 = new ArrayDeque<>();
+        for (int i = 0; i < data.length; i++)
+            array2.addFirst(data[i]);
+
+        ArrayDeque<Integer> array3 = new ArrayDeque<>();
+
+        assertTrue("", array.equals(array2));
+        assertFalse("", array.equals(array3));
+    }
+
 }

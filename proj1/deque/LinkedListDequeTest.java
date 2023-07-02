@@ -139,4 +139,34 @@ public class LinkedListDequeTest {
         assertEquals("back", lld1.get(2));
         assertEquals("back", lld1.getRecursive(2));
     }
+
+    @Test
+    public void testIterable() {
+        LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
+        lld1.addFirst("front");
+        lld1.addLast("middle");
+        lld1.addLast("back");
+
+        for (String s : lld1) {
+            System.out.println(s);
+        }
+
+        lld1.printDeque();
+    }
+
+    @Test
+    public void testEquals() {
+        LinkedListDeque<String> lld1 = new LinkedListDeque<String>();
+        lld1.addFirst("front");
+        lld1.addLast("middle");
+        lld1.addLast("back");
+
+        LinkedListDeque<String> lld2 = new LinkedListDeque<String>();
+        lld2.addFirst("front");
+        lld2.addLast("middle");
+        lld2.addLast("back");
+
+        assertTrue("", lld1.equals(lld2));
+        assertFalse("", lld1.equals("string"));
+    }
 }

@@ -1,6 +1,8 @@
 package deque;
 
-public class ArrayDeque<type> {
+import java.util.Iterator;
+
+public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
 
     /*
         some invariants :
@@ -26,6 +28,7 @@ public class ArrayDeque<type> {
         container = (type[]) new Object[8];
     }
 
+    @Override
     public void addFirst(type item) {
         if (size == container.length) {
             resize(2 * size);
@@ -36,6 +39,7 @@ public class ArrayDeque<type> {
         size++;
     }
 
+    @Override
     public void addLast(type item) {
         if (size == container.length) {
             resize(2 * size);
@@ -46,23 +50,29 @@ public class ArrayDeque<type> {
         size++;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
 
+    @Override
     public int size() {
         return size;
     }
 
+    @Override
     public void printDeque() {
+        /*
         int rightIndex;
         for (int i = 0; i < size; i++) {
             rightIndex = rightIndex(i);
             System.out.println(container[rightIndex] + " ");
         }
         System.out.println();
+         */
+        for (type x : this) {
+            System.out.print(x + " ");
+        }
+        System.out.println();
     }
 
+    @Override
     public type removeFirst() {
         if (isEmpty()) {
             System.out.println("the Deque is empty, invalid removeFirst");
@@ -82,6 +92,7 @@ public class ArrayDeque<type> {
         return result;
     }
 
+    @Override
     public type removeLast() {
         if (isEmpty()) {
             System.out.println("the Deque is empty, invalid removeFirst");
@@ -101,6 +112,7 @@ public class ArrayDeque<type> {
         return result;
     }
 
+    @Override
     public type get(int index) {
         if (index < 0 || index >= size) {
             System.out.println("invalid index : " + index + " valid range : (0," + size + ")");
@@ -138,5 +150,46 @@ public class ArrayDeque<type> {
         container = newContainer;
         first = newContainer.length - 1;
         last = size;
+    }
+
+    @Override
+    public Iterator<type> iterator() {
+        return new arrayDequeIterator<>();
+    }
+
+    private class arrayDequeIterator<type> implements Iterator<type> {
+
+        int index;
+        public arrayDequeIterator() {
+            index = 0;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < size;
+        }
+
+        @Override
+        public type next() {
+            type result = (type) container[rightIndex(index)];
+            index++;
+            return result;
+        }
+    }
+
+    @Override
+    public boolean equals(Object item) {
+        if (item instanceof ArrayDeque tmp) {
+            if (size != tmp.size)
+                return false;
+
+            for (int i = 0; i < size; i++) {
+                if (!get(i).equals(tmp.get(i)))
+                    return false;
+            }
+            return true;
+        }
+
+        return false;
     }
 }
