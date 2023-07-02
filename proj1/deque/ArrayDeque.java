@@ -1,9 +1,8 @@
 package deque;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
-public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
+public class ArrayDeque<T> implements Deque<T>, Iterable<T>{
 
     /*
         some invariants :
@@ -18,7 +17,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
     private int last;
     private double usageRatio;
 
-    private type[]container;
+    private T[]container;
 
     public ArrayDeque() {
         size = 0;
@@ -26,11 +25,11 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         first = 0;
         last = 1;
         //default length is 8
-        container = (type[]) new Object[8];
+        container = (T[]) new Object[8];
     }
 
     @Override
-    public void addFirst(type item) {
+    public void addFirst(T item) {
         if (size == container.length) {
             resize(2 * size);
         }
@@ -41,7 +40,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
     }
 
     @Override
-    public void addLast(type item) {
+    public void addLast(T item) {
         if (size == container.length) {
             resize(2 * size);
         }
@@ -67,14 +66,14 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         }
         System.out.println();
          */
-        for (type x : this) {
+        for (T x : this) {
             System.out.print(x + " ");
         }
         System.out.println();
     }
 
     @Override
-    public type removeFirst() {
+    public T removeFirst() {
         if (isEmpty()) {
             System.out.println("the Deque is empty, invalid removeFirst");
             return null;
@@ -86,7 +85,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         if (size >= 16)
             System.out.println("usage : " + usageRatio);
         // return the first item and set the item to null
-        type result = clear(0);
+        T result = clear(0);
 
         first = Math.floorMod(first + 1, container.length);
         size--;
@@ -94,7 +93,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
     }
 
     @Override
-    public type removeLast() {
+    public T removeLast() {
         if (isEmpty()) {
             System.out.println("the Deque is empty, invalid removeFirst");
             return null;
@@ -106,7 +105,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         if (size >= 16)
             System.out.println("usage : " + usageRatio);
         // return the last item and set the item to null
-        type result = clear(size - 1);
+        T result = clear(size - 1);
 
         last = Math.floorMod(last - 1, container.length);
         size--;
@@ -114,7 +113,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
     }
 
     @Override
-    public type get(int index) {
+    public T get(int index) {
         if (index < 0 || index >= size) {
             System.out.println("invalid index : " + index + " valid range : (0," + size + ")");
             return null;
@@ -124,14 +123,14 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         return container[rightIndex];
     }
 
-    private type clear(int index) {
+    private T clear(int index) {
         if (index < 0 || index >= size) {
             System.out.println("invalid index : " + index + " valid range : (0," + size + ")");
             return null;
         }
         // rightIndex = (first + 1 + index) % container.length
         int rightIndex = rightIndex(index);
-        type result = container[rightIndex];
+        T result = container[rightIndex];
         container[rightIndex] = null;
         return result;
     }
@@ -144,7 +143,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
      * @param capacity
      */
     private void resize(int capacity) {
-        type[] newContainer = (type[]) new Object[capacity];
+        T[] newContainer = (T[]) new Object[capacity];
         for (int i = 0; i < size; i++) {
             newContainer[i] = get(i);
         }
@@ -154,11 +153,11 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
     }
 
     @Override
-    public Iterator<type> iterator() {
+    public Iterator<T> iterator() {
         return new arrayDequeIterator<>();
     }
 
-    private class arrayDequeIterator<type> implements Iterator<type> {
+    private class arrayDequeIterator<T> implements Iterator<T> {
 
         int index;
         public arrayDequeIterator() {
@@ -171,8 +170,8 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
         }
 
         @Override
-        public type next() {
-            type result = (type) container[rightIndex(index)];
+        public T next() {
+            T result = (T) container[rightIndex(index)];
             index++;
             return result;
         }
@@ -192,15 +191,18 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
             return true;
         }
          */
-        if (item == null)
+        if (item == null) {
             return false;
-        if (this == item)
+        }
+        if (this == item) {
             return true;
+        }
         if (item.getClass() != this.getClass())
-            return false;
+            if (item.getClass() != LinkedListDeque.class)
+                return false;
 
-        ArrayDeque<type> tmp = (ArrayDeque<type>) item;
-        if (size != tmp.size)
+        Deque <T> tmp = (Deque <T>) item;
+        if (size != tmp.size())
             return false;
 
         for (int i = 0; i < size; i++) {

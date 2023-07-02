@@ -112,9 +112,12 @@ public class ArrayDequeTest {
     @Test
     public void testEquals() {
         ArrayDeque<Integer> array = new ArrayDeque<>();
+        LinkedListDeque<Integer> lld = new LinkedListDeque<>();
         int[] data = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
-        for (int i = 0; i < data.length; i++)
+        for (int i = 0; i < data.length; i++) {
             array.addFirst(data[i]);
+            lld.addFirst(data[i]);
+        }
 
         ArrayDeque<Integer> array2 = new ArrayDeque<>();
         for (int i = 0; i < data.length; i++)
@@ -124,6 +127,9 @@ public class ArrayDequeTest {
 
         assertTrue("", array.equals(array2));
         assertFalse("", array.equals(array3));
+
+        assertTrue("array deque and linked list deque should be same with same elements", array.equals(lld));
+        assertTrue("array deque and linked list deque should be same with same elements", lld.equals(array));
     }
 
 }
