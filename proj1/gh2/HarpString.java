@@ -1,10 +1,11 @@
 package gh2;
 
- import deque.Deque;
- import deque.LinkedListDeque;
+import deque.Deque;
+import deque.LinkedListDeque;
+import edu.princeton.cs.algs4.StdAudio;
+import edu.princeton.cs.algs4.StdDraw;
 
-//Note: This file will not compile until you complete the Deque implementations
-public class GuitarString {
+public class HarpString {
     /** Constants. Do not change. In case you're curious, the keyword final
      * means the values cannot be changed at runtime. We'll discuss this and
      * other topics in lecture on Friday. */
@@ -12,10 +13,10 @@ public class GuitarString {
     private static final double DECAY = .996; // energy decay factor
 
     /* Buffer for storing sound data. */
-     private Deque<Double> buffer;
+    private Deque<Double> buffer;
 
     /* Create a guitar string of the given frequency.  */
-    public GuitarString(double frequency) {
+    public HarpString(double frequency) {
         buffer = new LinkedListDeque<>();
         int capacity = (int)Math.round(SR / frequency);
         for (int i = 0; i < capacity; i++) {
@@ -46,6 +47,7 @@ public class GuitarString {
         double front = buffer.removeFirst();
         double first = buffer.get(0);
         double newDouble = ((front + first) / 2) * DECAY;
+        newDouble *= -1;
         buffer.addLast(newDouble);
     }
 
@@ -53,4 +55,44 @@ public class GuitarString {
     public double sample() {
         return buffer.get(0);
     }
+    private static double frequency(int index) {
+        double expoent = (index - 24) / 12;
+
+        return 440.0 * Math.pow(2, expoent);
+    }
+    public static void main(String[] args) {
+        String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
+        HarpString[] string = new HarpString[37];
+        for (int i = 0; i < 37; i++) {
+            string[i] = new HarpString(frequency(i));
+        }
+
+        char key;
+        int index = 0;
+        double sample = 0;
+        while (true) {
+
+            /* check if the user has typed a key; if so, process it */
+            if (StdDraw.hasNextKeyTyped()) {
+                key = StdDraw.nextKeyTyped();
+                index = keyboard.indexOf(key);
+                if (index >= 0 && index < 37)
+                    string[index].pluck();
+            }
+
+            /* compute the superposition of samples */
+            if (index >= 0 && index < 37) {
+                sample = string[index].sample();
+                /* play the sample on standard audio */
+                StdAudio.play(sample);
+            }
+
+
+            /* advance the simulation of each guitar string by one step */
+            for (int i = 0; i < 37; i++) {
+                string[i].tic();
+            }
+        }
+    }
 }
+
