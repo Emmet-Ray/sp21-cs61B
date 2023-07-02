@@ -1,5 +1,6 @@
 package deque;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
@@ -179,6 +180,7 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
 
     @Override
     public boolean equals(Object item) {
+        /*
         if (item instanceof ArrayDeque tmp) {
             if (size != tmp.size)
                 return false;
@@ -189,7 +191,23 @@ public class ArrayDeque<type> implements Deque<type>, Iterable<type>{
             }
             return true;
         }
+         */
+        if (item == null)
+            return false;
+        if (this == item)
+            return true;
+        if (item.getClass() != this.getClass())
+            return false;
 
-        return false;
+        ArrayDeque<type> tmp = (ArrayDeque<type>) item;
+        if (size != tmp.size)
+            return false;
+
+        for (int i = 0; i < size; i++) {
+            if (!get(i).equals(tmp.get(i)))
+                return false;
+        }
+        return true;
+
     }
 }

@@ -162,6 +162,7 @@ public class LinkedListDeque<Type> implements Deque<Type>, Iterable<Type> {
 
     @Override
     public boolean equals(Object item) {
+        /*
        if (item instanceof LinkedListDeque tmp) {
             if (this.size != tmp.size) {
                 return false;
@@ -175,5 +176,23 @@ public class LinkedListDeque<Type> implements Deque<Type>, Iterable<Type> {
        }
 
        return false;
+         */
+        if (item == null)
+            return false;
+        if (this == item)
+            return true;
+        if (item.getClass() != this.getClass())
+            return false;
+
+        LinkedListDeque<Type> tmp = (LinkedListDeque<Type>) item;
+        if (size != tmp.size)
+            return false;
+
+        for (int i = 0; i < size; i++) {
+            if (!get(i).equals(tmp.get(i)))
+                return false;
+        }
+        return true;
+
     }
 }
