@@ -26,4 +26,18 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /* TODO: fill in the rest of this class. */
+
+    public static void setUpGitlet() {
+        if (!GITLET_DIR.exists()) {
+            GITLET_DIR.mkdir();
+        }
+    }
+
+    public static void init() {
+        if (GITLET_DIR.exists()) {
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.exit(0);
+        }
+        setUpGitlet();
+    }
 }
