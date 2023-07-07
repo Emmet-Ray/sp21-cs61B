@@ -3,6 +3,7 @@ package bstmap;
 import jh61b.junit.In;
 
 import java.security.Key;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -10,6 +11,7 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K,V>{
 
    private BSTNode root;
    private int size;
+   private Set<K> keys;
     private class BSTNode {
 
         BSTNode left;
@@ -28,6 +30,7 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K,V>{
     public BSTMap() {
         root = null;
         size = 0;
+        keys = new HashSet<>();
     }
 
     /** search method */
@@ -61,7 +64,42 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K,V>{
         return root;
     }
 
+    private BSTNode delete(BSTNode root, K k) {
+       if (root == null) {
+           return null;
+       }
+       int result = root.key.compareTo(k);
+       if (result < 0) {
+           root.right = delete(root.right, k);
+       } else if (result > 0) {
+           root.left = delete(root.left, k);
+       } else {
+           if (root.left == null) {
+               return root.right;
+           }
+           if (root.right == null) {
+               return root.left;
+           } else {
+                BSTNode min = findMin(root.right);
+                root.right = delete(root.right, min.key);
+                min.left = root.left;
+                min.right = root.right;
+                root = min;
+           }
+       }
+       return root;
+    }
 
+    private BSTNode findMin(BSTNode node) {
+        if (node == null) {
+            return null;
+        }
+        if (node.left == null) {
+            return node;
+        }
+        return findMin(node.left);
+
+    }
     @Override
     public void clear() {
         root = null;
@@ -94,46 +132,60 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K,V>{
     public void put(K key, V value) {
         root = Insert(root, key, value);
         size++;
+        keys.add(key);
     }
 
     @Override
     public Set<K> keySet() {
-        try {
-            unsupportOperation();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+       return keys;
     }
 
     @Override
     public V remove(K key) {
-        try {
-            unsupportOperation();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        V tmp = get(key);
+        root = delete(root, key);
+        if (tmp != null) {
+            size--;
+            keys.remove(key);
+            return tmp;
+        } else {
+            System.out.println("no such key : " + key);
+            return null;
         }
-        return null;
     }
 
     @Override
     public V remove(K key, V value) {
-        try {
-            unsupportOperation();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        V tmp = get(key);
+        root = delete(root, key);
+        if (tmp != null) {
+            size--;
+            keys.remove(key);
+            return tmp;
+        } else {
+            System.out.println("no such key : " + key);
+            return null;
         }
-        return null;
     }
 
     @Override
     public Iterator<K> iterator() {
-        try {
-            unsupportOperation();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        return new BSTMapIterator();
+    }
+    private class BSTMapIterator<K> implements Iterator<K>{
+        Iterator keysIterator;
+        public BSTMapIterator() {
+            keysIterator = keys.iterator();
         }
-        return null;
+        @Override
+        public boolean hasNext() {
+            return keysIterator.hasNext();
+        }
+
+        @Override
+        public K next() {
+            return (K) keysIterator.next();
+        }
     }
 
     private void unsupportOperation() throws Exception {

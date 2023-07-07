@@ -113,4 +113,17 @@ public class TestBSTMapExtra {
         assertEquals(null, noChild.get('Z'));
     }
 
+    /** 0 child & 1 child */
+    @Test
+    public void testRemove() {
+        BSTMap<String, Integer> tmp = new BSTMap<>();
+        tmp.put("a", 1);
+        tmp.put("b", 1);
+        tmp.put("c", 1);
+
+        tmp.remove("b");
+        assertTrue(tmp.containsKey("a"));
+        assertTrue(tmp.containsKey("c"));
+        assertFalse(tmp.containsKey("b"));
+    }
 }
