@@ -2,6 +2,8 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
 
 import static gitlet.Utils.*;
 
@@ -32,17 +34,21 @@ public class Repository {
      */
 
     /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    static final File GITLET_DIR = join(CWD, ".gitlet");
     //  .gitlet/objects  directory
-    public static final File OBJECTS = join(GITLET_DIR, "objects");
+    static final File OBJECTS = join(GITLET_DIR, "objects");
 
-    public static final File MASTER = join(GITLET_DIR, "master");
+    static final File MASTER = join(GITLET_DIR, "master");
 
-    public static final File HEAD = join(GITLET_DIR, "HEAD");
+    static final File HEAD = join(GITLET_DIR, "HEAD");
 
-    public static final File STAGING_FOR_ADDITION = join(GITLET_DIR, "stagingForAddition");
+    static final File STAGING_FOR_ADDITION = join(GITLET_DIR, "stagingForAddition");
+    // <file name, SHA-1 code of the content of the file>
+    private static HashMap<String, String> additionContent = new HashMap<>();
+
+
     /**
      * todo : setup of .gitlet and some internal structure of .gitlet
      *
@@ -68,11 +74,15 @@ public class Repository {
         }
         if (!STAGING_FOR_ADDITION.exists()) {
             STAGING_FOR_ADDITION.createNewFile();
+            // init with the initial additionContent HashMap
+            Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
         }
     }
 
     /**
-     * todo : failure case
+     * todo : need to VERIFY this 100% worked, so I reserve these TODOs.
+     *
+     *
      * todo : Creates a new Gitlet version-control system in the current directory
      * todo : initial commit with commit message and date, no tracking files.
      * todo : a single branch : master, initially points to the initial commit
@@ -106,11 +116,10 @@ public class Repository {
      *         adding a file is also called staging the file for addition
      *   what is "staging area" ? where is it ?
      *   staged for addition, staged for removal ?
-     *   i guess in the .gitlet directory ?
+     *   file : .gitlet/stagingForAdition
+     *
      * todo : Staging an already-staged file overwrites
      *          the previous entry in the staging area with the new contents
-     *
-     *  hint :  The staging area should be somewhere in .gitlet
      *
      * todo : If the current working version of the file is identical to the version in the current commit,
      *      do not stage it to be added, and remove it from the staging area if it is already there
@@ -118,22 +127,54 @@ public class Repository {
      *   how i know "identical" ? i guess using hash code
      *   what is "the current commit" ? i guess some commit that pointer like HEAD points to ?
      *
-     * todo :  Failure cases: If the file does not exist,
-     *          print the error message File does not exist.
-     *         and exit without changing anything.
      *
      * todo : Runtime: In the worst case,
      *          should run in linear time relative to the size of the file being added
      *          and lgN, for N the number of files in the commit
      * @param file the file name to be added
      */
-    public static void add(String file) {
+    public static void add(String file) throws IOException {
         // file does not exist
         File stagingFile = join(CWD, file);
         if (!stagingFile.exists()) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
+        // get the SHA-1 code of the file content of CWD version
+        File addedFile = join(CWD, file);
+        String hash_addedFile = Utils.sha1(Files.readString(addedFile.toPath()));
+
+        // todo : read the current commit from HEAD
+        //         1. see if the file is already there
+        //          2. if it is there && the current commit version & the current working version are the same, do not stage the file
+        //          3. remove the file from the staging area if it is already there
+
+
+        /**  read from the staging area */
+        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+        // if already staged the file,
+        // 1. compare the content between the already staged one and current working version
+        if (additionContent.containsKey(file)) {
+            String old_sha_1 = additionContent.get(file);
+            if (old_sha_1.equals(hash_addedFile)) {
+                return;
+            }
+            /** if the CWD version is newer, remove the old one from the staging area*/
+            // todo : do I need to remove the old blob in .gitlet/objects ????
+            additionContent.remove(file);
+        }
+
+        // create blob with its sha-1 id in .gitlet/objects, and write current state of the file to the blob
+        File hash_file = join(OBJECTS, hash_addedFile);
+        if (!hash_file.exists()) {
+            hash_file.createNewFile();
+            // todo : need to verify this write
+            Utils.writeObject(hash_file, addedFile);
+        }
+        // put the new mapping into staging addition area
+        additionContent.put(file, hash_addedFile);
+        // write to the staging area
+        Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
     }
 
     /**

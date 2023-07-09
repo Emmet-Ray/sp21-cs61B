@@ -30,6 +30,9 @@
 #### Fields
 1. String message : commit msg
 2. Date date : commit date
+3. String parent : parent SHA-1 ID
+4. HashMap<String, String> blobs : used to keep track of blob references
+5. String SHA_1 : maybe cache the SHA_1 ID
 ## Algorithms
 
 ## Persistence

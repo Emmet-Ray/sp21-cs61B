@@ -22,8 +22,6 @@ public class Main {
         switch(firstArg) {
             case "init":
                 validateNumArgs("init", args, 1);
-                // TODO : implement the validateFormat()
-                validateFormat();
                 Repository.init();
                 break;
             case "add":

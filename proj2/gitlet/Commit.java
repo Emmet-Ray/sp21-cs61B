@@ -33,6 +33,7 @@ public class Commit implements Serializable {
     private String parent;
 
     private HashMap<String, String> blobs;
+
     /**
      *  for initial commit
      */
@@ -46,7 +47,7 @@ public class Commit implements Serializable {
 
     /**
      * new commit
-     *
+     * todo : the signature may be modified
      */
     public Commit(String message) {
         this.message = message;
@@ -55,40 +56,13 @@ public class Commit implements Serializable {
     }
 
     public String SHA_1() {
-        return get_SHA1();
-    }
-    private String get_SHA1() {
-        String input = message + date.toString() + parent;
-        if (blobs != null) {
-            input += blobs.toString();
-        }
-        try {
-            // getInstance() method is called with algorithm SHA-1
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-
-            // digest() method is called
-            // to calculate message digest of the input string
-            // returned as array of byte
-            byte[] messageDigest = md.digest(input.getBytes());
-
-            // Convert byte array into signum representation
-            BigInteger no = new BigInteger(1, messageDigest);
-
-            // Convert message digest into hex value
-            String hashtext = no.toString(16);
-
-            // Add preceding 0s to make it 32 bit
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
-            }
-
-            // return the HashText
-            return hashtext;
-        }
-
-        // For specifying wrong message digest algorithms
-        catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+        //blobs == null i.e. if is initial commit
+        if (blobs == null) {
+            return Utils.sha1(message, date.toString(), parent);
+        } else {
+            return Utils.sha1(message, date.toString(), parent, blobs.toString());
         }
     }
+
+
 }
