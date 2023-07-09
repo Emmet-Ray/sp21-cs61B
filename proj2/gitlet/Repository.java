@@ -1,15 +1,26 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
+
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
 
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
+ *       does at a high level.
  *
- *  @author TODO
+ *  @author mengtaoli
+ *
+ * The structure of a .gitlet repository is as follows :
+ *  .gitlet/ --
+ *      - objects / -- a directory that includes files including : commits, blobs(files)
+ *      - HEAD / -- a file that points to the current commit
+ *      - master / -- a file that represents the initial branch, also points to the current commit
+ *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
+ *      // TODO : to be continued...
+ *
  */
 public class Repository {
     /**
@@ -24,20 +35,162 @@ public class Repository {
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+    //  .gitlet/objects  directory
+    public static final File OBJECTS = join(GITLET_DIR, "objects");
 
-    /* TODO: fill in the rest of this class. */
+    public static final File MASTER = join(GITLET_DIR, "master");
 
-    public static void setUpGitlet() {
+    public static final File HEAD = join(GITLET_DIR, "HEAD");
+
+    public static final File STAGING_FOR_ADDITION = join(GITLET_DIR, "stagingForAddition");
+    /**
+     * todo : setup of .gitlet and some internal structure of .gitlet
+     *
+     *  .gitlet/ --
+     *      - objects / -- a directory that includes files including : commits, blobs(files)
+     *      - HEAD / -- a file that points to the current commit
+     *      - master / -- a file that represents the initial branch, also points to the current commit
+     *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
+     *      // TODO : to be continued...
+     */
+    public static void setUpGitlet() throws IOException {
         if (!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
         }
+        if (!OBJECTS.exists()) {
+            OBJECTS.mkdir();
+        }
+        if (!HEAD.exists()) {
+            HEAD.createNewFile();
+        }
+        if (!MASTER.exists()) {
+            MASTER.createNewFile();
+        }
+        if (!STAGING_FOR_ADDITION.exists()) {
+            STAGING_FOR_ADDITION.createNewFile();
+        }
     }
 
-    public static void init() {
+    /**
+     * todo : failure case
+     * todo : Creates a new Gitlet version-control system in the current directory
+     * todo : initial commit with commit message and date, no tracking files.
+     * todo : a single branch : master, initially points to the initial commit
+     *       i guess the branch is a pointer i.e. it is the hash code of the commit it points to.
+     * todo : what is UID ?
+     */
+    public static void init() throws IOException {
+        // failure case
         if (GITLET_DIR.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
+        // set up version control system in CWD
         setUpGitlet();
+        // create initial commit with its SHA-1 ID, store it in .gitlet/objects
+        Commit initialCommit = new Commit();
+        String hashing = initialCommit.SHA_1();
+        File initial = join(OBJECTS, hashing);
+        if (!initial.exists()) {
+            initial.createNewFile();
+        }
+        Utils.writeObject(initial, initialCommit);
+        // both HEAD and master point to the initial commit i.e. contain its SHA-1 ID
+        Utils.writeContents(MASTER, hashing);
+        Utils.writeContents(HEAD, hashing);
+    }
+
+    /**
+     * todo : Adds a copy of the file as it currently exists to the staging area
+     *         (see the description of the commit command)
+     *         adding a file is also called staging the file for addition
+     *   what is "staging area" ? where is it ?
+     *   staged for addition, staged for removal ?
+     *   i guess in the .gitlet directory ?
+     * todo : Staging an already-staged file overwrites
+     *          the previous entry in the staging area with the new contents
+     *
+     *  hint :  The staging area should be somewhere in .gitlet
+     *
+     * todo : If the current working version of the file is identical to the version in the current commit,
+     *      do not stage it to be added, and remove it from the staging area if it is already there
+     *      (as can happen when a file is changed, added, and then changed back to it’s original version)
+     *   how i know "identical" ? i guess using hash code
+     *   what is "the current commit" ? i guess some commit that pointer like HEAD points to ?
+     *
+     * todo :  Failure cases: If the file does not exist,
+     *          print the error message File does not exist.
+     *         and exit without changing anything.
+     *
+     * todo : Runtime: In the worst case,
+     *          should run in linear time relative to the size of the file being added
+     *          and lgN, for N the number of files in the commit
+     * @param file the file name to be added
+     */
+    public static void add(String file) {
+        // file does not exist
+        File stagingFile = join(CWD, file);
+        if (!stagingFile.exists()) {
+            System.out.println("File does not exist.");
+            System.exit(0);
+        }
+    }
+
+    /**
+     * todo : Saves a snapshot of tracked files in the current commit
+     *      and staging area so they can be restored at a later time,
+     *      creating a new commit
+     *   the new commit combines "the current commit" and "staging area"
+     *
+     * todo :
+     *      1. By default, each commit’s snapshot of files will be exactly the same as
+     *      its parent commit’s snapshot of files
+     *      2. A commit will only update the contents of files it is tracking
+     *      that have been staged for addition at the time of commit,
+     *      in which case the commit will now include the version of the file that was staged
+     *      instead of the version it got from its parent
+     *      A commit will save and start tracking any files
+     *      that were staged for addition but weren’t tracked by its parent.
+     *      3. Finally, files tracked in the current commit may be untracked in the new commit
+     *      as a result being staged for removal by the rm command (below
+     *      Summmary :
+     *          The bottom line: By default a commit has the same file contents as its parent.
+     *          Files staged for addition and removal are the updates to the commit.
+     *          Of course, the date (and likely the mesage) will also different from the parent.
+     *
+     * todo :
+     *      The staging area is cleared after a commit.
+     *
+     * todo :
+     *      The commit command never adds, changes, or removes files in the working directory
+     *      (other than those in the .gitlet directory)
+     *
+     * todo :
+     *      After the commit command, the new commit is added as a new node in the commit tree.
+     *
+     * todo :
+     *      The commit just made becomes the “current commit”, and the head pointer now points to it.
+     *      The previous head commit is this commit’s parent commit.
+     *
+     * todo :
+     *      Each commit is identified by its SHA-1 id, which must include
+     *      1. the file (blob) references of its files,
+     *      2. parent reference,
+     *      3. log message,
+     *      4. and commit time.
+     *
+     * hint :
+     *      remember that blobs are content addressable
+     *      and use the SHA1 to your advantage
+     *
+     * todo : failure cases
+     *      1. If no files have been staged, abort.
+     *      Print the message No changes added to the commit.
+     *      2. Every commit must have a non-blank message.
+     *      If it doesn’t, print the error message Please enter a commit message.
+     * @param message the commit message
+     */
+    public static void commit(String message) {
+
     }
 }

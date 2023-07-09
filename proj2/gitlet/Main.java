@@ -1,5 +1,7 @@
 package gitlet;
 
+import java.io.IOException;
+
 import static gitlet.Repository.GITLET_DIR;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
@@ -10,7 +12,7 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
        /** if no command line arguments input */
         if (args.length == 0) {
             System.out.println("Please enter a command.");
@@ -26,7 +28,19 @@ public class Main {
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
+                initializedGitletRepository();
+                validateNumArgs("add", args, 2);
+                // TODO : implement the validateFormat()
+                validateFormat();
+                Repository.add(args[1]);
                 break;
+            case "commit":
+                // todo : "commit [message]"
+                initializedGitletRepository();
+                validateNumArgs("commit", args, 2);
+                // TODO : implement the validateFormat()
+                validateFormat();
+                Repository.commit(args[1]);
             // TODO: FILL THE REST IN
 
             default:
@@ -42,6 +56,11 @@ public class Main {
         }
     }
 
+    /**
+     * if the command need to be in an initialized gitlet repo, but not
+     * print the error message
+     * abort
+     */
     public static void initializedGitletRepository() {
         if (!GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
