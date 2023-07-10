@@ -3,10 +3,8 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -345,13 +343,15 @@ public class Repository {
     public static void log() {
         String p = readContentsAsString(HEAD);
         Commit pCommit = readObject(join(OBJECTS, p), Commit.class);
+        // get this from chat GPT
+        SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
         // while pCommit is not initial commit
         while (pCommit.getBlobs() != null) {
 
             // todo : merge commit
             System.out.println("===");
             System.out.println("commit " + pCommit.SHA_1());
-            System.out.println("Date: " + pCommit.getDate().toString());
+            System.out.println("Date: " + sdf.format(pCommit.getDate()));
             System.out.println(pCommit.getMessage());
             System.out.println();
 
@@ -361,10 +361,25 @@ public class Repository {
 
         System.out.println("===");
         System.out.println("commit " + pCommit.SHA_1());
-        System.out.println("Date: " + pCommit.getDate().toString());
+        System.out.println("Date: " + sdf.format(pCommit.getDate()));
         System.out.println(pCommit.getMessage());
         System.out.println();
 
+    }
+
+    public static void globalLog() {
+        List<String> allCommits = plainFilenamesIn(OBJECTS);
+        Commit pCommit;
+        SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
+        for (String s : allCommits) {
+             pCommit = readObject(join(OBJECTS, s), Commit.class);
+            // todo : merge commit
+            System.out.println("===");
+            System.out.println("commit " + pCommit.SHA_1());
+            System.out.println("Date: " + sdf.format(pCommit.getDate()));
+            System.out.println(pCommit.getMessage());
+            System.out.println();
+        }
     }
 
     /**

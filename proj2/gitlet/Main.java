@@ -56,6 +56,14 @@ public class Main {
                 validateFormat();
                 Repository.log();
                 break;
+            case "global-log":
+                // todo : "log"
+                initializedGitletRepository();
+                validateNumArgs("global-log", args, 1);
+                // TODO : implement the validateFormat()
+                validateFormat();
+                Repository.globalLog();
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
