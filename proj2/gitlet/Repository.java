@@ -192,7 +192,9 @@ public class Repository {
         if (!hash_file.exists()) {
             hash_file.createNewFile();
             // todo : need to verify this write
-            Utils.writeObject(hash_file, addedFile);
+            // this is WRONG , need to write as STRING instead of OBJECT
+            //Utils.writeObject(hash_file, addedFile);
+            writeContents(hash_file, Files.readString(addedFile.toPath()));
         }
         // put the new mapping into staging addition area
         additionContent.put(file, hash_addedFile);
@@ -382,6 +384,66 @@ public class Repository {
         }
     }
 
+    /**
+     * todo :
+     *      Takes the version of the file as it exists in the head commit
+     *      and puts it in the working directory,
+     *      overwriting the version of the file that’s already there if there is one.
+     * todo :
+     *      The new version of the file is not staged.
+     *      what does this MEAN ????
+     *
+     * todo : failure case
+     *
+     * @param file
+     */
+    public static void checkout1(String file) throws IOException {
+        String p = readContentsAsString(HEAD);
+        checkoutHelper(p, file);
+
+    }
+
+    /**
+     *  todo : basic same as checkout1 but with given commit ID
+     * @param commitID
+     * @param file
+     */
+    public static void checkout2(String commitID, String file) throws IOException {
+        File commit = join(OBJECTS, commitID);
+        if (!commit.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        checkoutHelper(commitID, file);
+    }
+
+    public static void checkout3(String branch) {
+        
+    }
+
+    /**
+     * checkout CWD [file] to the [commitID] one if could
+     * @param commitID
+     * @param file
+     * @throws IOException
+     */
+    private static void checkoutHelper(String commitID, String file) throws IOException {
+
+        Commit pCommit = readObject(join(OBJECTS, commitID), Commit.class);
+        HashMap<String, String> blobs = pCommit.getBlobs();
+        if (!blobs.containsKey(file)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        File cwdFile = join(CWD, file);
+        // read from headCommit the content of the old File
+        File headCommitFile = join(BLOBS, blobs.get(file));
+        String content = readContentsAsString(headCommitFile);
+        if (!cwdFile.exists()) {
+            cwdFile.createNewFile();
+        }
+        writeContents(cwdFile, content);
+    }
     /**
      *
      * @param sha1 the new content that HEAD & MASTER have

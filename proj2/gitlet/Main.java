@@ -64,6 +64,31 @@ public class Main {
                 validateFormat();
                 Repository.globalLog();
                 break;
+            case "checkout":
+                /**
+                 *  todo : 3 kinds of checkout
+                 */
+                initializedGitletRepository();
+                if (args.length == 3) {
+                    validateFormat();
+                    //"checkout -- [file name]"
+                    Repository.checkout1(args[2]);
+                } else if (args.length == 4) {
+                    validateFormat();
+                    //"checkout [commit id] -- [file name]"
+                    Repository.checkout2(args[1], args[3]);
+                } else if (args.length == 2){
+                    validateFormat();
+                    // todo 3. "checkout [branch name]"
+                    Repository.checkout3(args[1]);
+
+                } else {
+                    // invalid
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
+                break;
+
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
