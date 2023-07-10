@@ -39,6 +39,7 @@ public class Main {
                 // TODO : implement the validateFormat()
                 validateFormat();
                 Repository.commit(args[1]);
+                break;
             // TODO: FILL THE REST IN
 
             default:

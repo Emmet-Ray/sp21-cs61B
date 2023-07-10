@@ -100,15 +100,13 @@ public class Repository {
         setUpGitlet();
         // create initial commit with its SHA-1 ID, store it in .gitlet/objects
         Commit initialCommit = new Commit();
-        String hashing = initialCommit.SHA_1();
-        File initial = join(OBJECTS, hashing);
+        File initial = join(OBJECTS, initialCommit.SHA_1());
         if (!initial.exists()) {
             initial.createNewFile();
         }
         Utils.writeObject(initial, initialCommit);
         // both HEAD and master point to the initial commit i.e. contain its SHA-1 ID
-        Utils.writeContents(MASTER, hashing);
-        Utils.writeContents(HEAD, hashing);
+        changeHeadMaster(initialCommit.SHA_1());
     }
 
     /**
@@ -229,10 +227,6 @@ public class Repository {
      *      3. log message,
      *      4. and commit time.
      *
-     * hint :
-     *      remember that blobs are content addressable
-     *      and use the SHA1 to your advantage
-     *
      * todo : failure cases
      *      1. If no files have been staged, abort.
      *      Print the message No changes added to the commit.
@@ -240,7 +234,40 @@ public class Repository {
      *      If it doesn’t, print the error message Please enter a commit message.
      * @param message the commit message
      */
-    public static void commit(String message) {
+    public static void commit(String message) throws IOException {
+        /** failure cases */
+        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+        if (additionContent.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+        if (message.isEmpty()) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
 
+        Commit newCommit = new Commit(message);
+        newCommit.updateBlobReferences(additionContent);
+
+        /** works after the commit */
+        //clear staging area
+        additionContent.clear();
+        Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
+        // todo : removal staging area
+        // "move" HEAD pointer & MASTER
+        changeHeadMaster(newCommit.SHA_1());
+        // create the commit in OBJECTS
+        File newCommitBlob = join(OBJECTS, newCommit.SHA_1());
+        newCommitBlob.createNewFile();
+        Utils.writeObject(newCommitBlob, newCommit);
+    }
+
+    /**
+     *   
+     * @param sha1 the new content that HEAD & MASTER have
+     */
+    private static void changeHeadMaster(String sha1) {
+        Utils.writeContents(HEAD, sha1);
+        Utils.writeContents(MASTER, sha1);
     }
 }

@@ -2,10 +2,15 @@ package gitlet;
 
 // TODO: any imports you need here
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
+import static gitlet.Repository.HEAD;
+import static gitlet.Repository.OBJECTS;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -44,12 +49,26 @@ public class Commit implements Serializable {
 
     /**
      * new commit
-     * todo : the signature may be modified
+     * get parent from HEAD
+     * get parent's blobs from OBJECTS/*HEAD
      */
     public Commit(String message) {
         this.message = message;
         // current time
         this.date = new Date();
+        String parent = Utils.readContentsAsString(HEAD);
+        this.parent = parent;
+
+        File parentBlob = Utils.join(OBJECTS, parent);
+        Commit parentCommit = Utils.readObject(parentBlob, Commit.class);
+        this.blobs = new HashMap<>();
+        // parent commit is not initial commit
+        if (parentCommit.blobs != null) {
+            for (String s : parentCommit.blobs.keySet()) {
+                this.blobs.put(s, parentCommit.blobs.get(s));
+            }
+        }
+
     }
 
     public String SHA_1() {
@@ -59,6 +78,18 @@ public class Commit implements Serializable {
         } else {
             return Utils.sha1(message, date.toString(), parent, blobs.toString());
         }
+    }
+
+    /**
+     *   update the blobs according to staging for addition
+     *   todo : & staging for removal
+     *          need to modify the signature
+      * @param additionContent  the staging for addition files
+     */
+    public void updateBlobReferences(Map<String, String> additionContent) {
+            for (String s : additionContent.keySet()) {
+                    this.blobs.put(s, additionContent.get(s));
+            }
     }
 
 
