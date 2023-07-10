@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Map;
 
 import static gitlet.Utils.*;
 
@@ -47,7 +48,7 @@ public class Repository {
     static final File STAGING_FOR_ADDITION = join(GITLET_DIR, "stagingForAddition");
     // <file name, SHA-1 code of the content of the file>
     private static HashMap<String, String> additionContent = new HashMap<>();
-
+    // todo : maybe Map<String, String> additionContent = new HashMap<>(); ?
 
     /**
      * todo : setup of .gitlet and some internal structure of .gitlet
@@ -134,7 +135,7 @@ public class Repository {
      * @param file the file name to be added
      */
     public static void add(String file) throws IOException {
-        // file does not exist
+        // failure case : file does not exist
         File stagingFile = join(CWD, file);
         if (!stagingFile.exists()) {
             System.out.println("File does not exist.");
@@ -160,8 +161,16 @@ public class Repository {
                 return;
             }
             /** if the CWD version is newer, remove the old one from the staging area*/
-            // todo : do I need to remove the old blob in .gitlet/objects ????
+            /** todo : do I need to remove the old blob in .gitlet/objects ????
+             *       i guess so.
+             *       verify this
+             */
             additionContent.remove(file);
+            File oldFile = join(OBJECTS, old_sha_1);
+            if (!oldFile.delete()) {
+                System.out.println("delete failed");
+                System.exit(0);
+            }
         }
 
         // create blob with its sha-1 id in .gitlet/objects, and write current state of the file to the blob
