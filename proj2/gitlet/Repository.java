@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static gitlet.Utils.*;
 
@@ -18,10 +20,12 @@ import static gitlet.Utils.*;
  *
  * The structure of a .gitlet repository is as follows :
  *  .gitlet/ --
- *      - objects / -- a directory that includes files including : commits, blobs(files)
+ *      - objects / -- a directory that includes files including : commits
+ *      - blobs / -- a directory that includes blobs (files)
  *      - HEAD / -- a file that points to the current commit
  *      - master / -- a file that represents the initial branch, also points to the current commit
  *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
+ *      - removal / -- a file for staging for removal
  *      // TODO : to be continued...
  *
  */
@@ -41,13 +45,18 @@ public class Repository {
     //  .gitlet/objects  directory
     static final File OBJECTS = join(GITLET_DIR, "objects");
 
+    static final File BLOBS = join(GITLET_DIR, "blobs");
     static final File MASTER = join(GITLET_DIR, "master");
 
     static final File HEAD = join(GITLET_DIR, "HEAD");
 
     static final File STAGING_FOR_ADDITION = join(GITLET_DIR, "stagingForAddition");
+
+    static final File STAGING_FOR_REMOVAL = join(GITLET_DIR, "removal");
     // <file name, SHA-1 code of the content of the file>
     private static HashMap<String, String> additionContent = new HashMap<>();
+
+    private static HashSet<String> removalContent = new HashSet<>();
     // todo : maybe Map<String, String> additionContent = new HashMap<>(); ?
 
     /**
@@ -58,6 +67,7 @@ public class Repository {
      *      - HEAD / -- a file that points to the current commit
      *      - master / -- a file that represents the initial branch, also points to the current commit
      *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
+     *      - removal / -- a file that represents the staging area for removal
      *      // TODO : to be continued...
      */
     public static void setUpGitlet() throws IOException {
@@ -66,6 +76,9 @@ public class Repository {
         }
         if (!OBJECTS.exists()) {
             OBJECTS.mkdir();
+        }
+        if (!BLOBS.exists()) {
+            BLOBS.mkdir();
         }
         if (!HEAD.exists()) {
             HEAD.createNewFile();
@@ -77,6 +90,11 @@ public class Repository {
             STAGING_FOR_ADDITION.createNewFile();
             // init with the initial additionContent HashMap
             Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
+        }
+        if (!STAGING_FOR_REMOVAL.exists()) {
+            STAGING_FOR_REMOVAL.createNewFile();
+
+            Utils.writeObject(STAGING_FOR_REMOVAL, removalContent);
         }
     }
 
@@ -164,15 +182,15 @@ public class Repository {
              *       verify this
              */
             additionContent.remove(file);
-            File oldFile = join(OBJECTS, old_sha_1);
-            if (!oldFile.delete()) {
+            File oldFile = join(BLOBS, old_sha_1);
+            if (!Utils.restrictedDelete(oldFile)) {
                 System.out.println("delete failed");
                 System.exit(0);
             }
         }
 
-        // create blob with its sha-1 id in .gitlet/objects, and write current state of the file to the blob
-        File hash_file = join(OBJECTS, hash_addedFile);
+        // create blob with its sha-1 id in .gitlet/blobs, and write current state of the file to the blob
+        File hash_file = join(BLOBS, hash_addedFile);
         if (!hash_file.exists()) {
             hash_file.createNewFile();
             // todo : need to verify this write
@@ -263,7 +281,94 @@ public class Repository {
     }
 
     /**
-     *   
+     *  todo : Unstage the file if it is currently staged for addition
+     *
+     *  todo :
+     *      If the file is tracked in the current commit
+     *      stage it for removal and remove the file from the working directory
+     *      if the user has not already done
+     *      so (do not remove it unless it is tracked in the current commit).
+     *
+     *  todo :
+     *      If the file is neither staged nor tracked by the head commit,
+     *      print the error message No reason to remove the file.
+     * @param file
+     */
+    public static void rm(String file) {
+        // flag used to indicate whether it has reason to remove the file
+        boolean flag = false;
+        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
+        if (additionContent.containsKey(file)) {
+            flag = true;
+            additionContent.remove(file);
+            writeObject(STAGING_FOR_ADDITION, additionContent);
+        }
+
+        String head = readContentsAsString(HEAD);
+        Commit currentCommit = readObject(join(OBJECTS, head), Commit.class);
+        HashMap<String, String> currentBolbs = currentCommit.getBlobs();
+        if (currentBolbs != null && currentBolbs.containsKey(file)) {
+            flag = true;
+            // stage it for removal
+            removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+            removalContent.add(file);
+            writeObject(STAGING_FOR_REMOVAL, removalContent);
+            // delete it
+            Utils.restrictedDelete(join(CWD, file));
+        }
+
+        if (!flag) {
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
+        }
+    }
+
+    /**
+     * todo :
+     *      Starting at the current head commit,
+     *      display information about each commit backwards along the commit tree
+     *      until the initial commit,
+     *      following the first parent commit links,
+     *      ignoring any second parents found in merge commits
+     *
+     *  todo :
+     *      the format is in the spec
+     *
+     *  todo :
+     *      hint :
+     *      By the way, you’ll find that the Java classes java.util.Date and java.util.Formatter
+     *      are useful for getting and formatting times
+     *
+     *  todo :
+     *      For merge commits
+     */
+    public static void log() {
+        String p = readContentsAsString(HEAD);
+        Commit pCommit = readObject(join(OBJECTS, p), Commit.class);
+        // while pCommit is not initial commit
+        while (pCommit.getBlobs() != null) {
+
+            // todo : merge commit
+            System.out.println("===");
+            System.out.println("commit " + pCommit.SHA_1());
+            System.out.println("Date: " + pCommit.getDate().toString());
+            System.out.println(pCommit.getMessage());
+            System.out.println();
+
+            p = pCommit.getParent();
+            pCommit = readObject(join(OBJECTS, p), Commit.class);
+        }
+
+        System.out.println("===");
+        System.out.println("commit " + pCommit.SHA_1());
+        System.out.println("Date: " + pCommit.getDate().toString());
+        System.out.println(pCommit.getMessage());
+        System.out.println();
+
+    }
+
+    /**
+     *
      * @param sha1 the new content that HEAD & MASTER have
      */
     private static void changeHeadMaster(String sha1) {

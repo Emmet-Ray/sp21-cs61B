@@ -71,6 +71,22 @@ public class Commit implements Serializable {
 
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public HashMap<String, String> getBlobs() {
+        return blobs;
+    }
+
     public String SHA_1() {
         //blobs == null i.e. if is initial commit
         if (blobs == null) {

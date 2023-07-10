@@ -40,8 +40,22 @@ public class Main {
                 validateFormat();
                 Repository.commit(args[1]);
                 break;
-            // TODO: FILL THE REST IN
-
+            case "rm":
+                // todo : "rm [file name]"
+                initializedGitletRepository();
+                validateNumArgs("rm", args, 2);
+                // TODO : implement the validateFormat()
+                validateFormat();
+                Repository.rm(args[1]);
+                break;
+            case "log":
+                // todo : "log"
+                initializedGitletRepository();
+                validateNumArgs("log", args, 1);
+                // TODO : implement the validateFormat()
+                validateFormat();
+                Repository.log();
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
