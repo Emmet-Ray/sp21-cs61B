@@ -110,6 +110,7 @@ public class Repository {
      * todo : a single branch : master, initially points to the initial commit
      *       i guess the branch is a pointer i.e. it is the hash code of the commit it points to.
      * todo : what is UID ?
+     *        sha-1
      */
     public static void init() throws IOException {
         // failure case
@@ -428,10 +429,35 @@ public class Repository {
 
     /**
      *  todo :
-     *      
+     *      Takes all files in the commit at the head of the given branch,
+     *      and puts them in the working directory
+     *      overwriting the versions of the files that are already there if they exist.
+     *
+     *  todo :
+     *      at the end of this command,
+     *      the given branch will now be considered the current branch (HEAD).
+     *
+     *  todo :
+     *      Any files that are tracked in the current branch
+     *      but are not present in the checked-out branch are deleted.
+     *
+     *  todo :
+     *       The staging area is cleared,
+     *       unless the checked-out branch is the current branch
      * @param branch
      */
     public static void checkout3(String branch) {
+        /** failure cases */
+        File b = join(BRANCH, branch);
+        if (!b.exists()) {
+            System.out.println("No such branch exists.");
+            System.exit(0);
+        }
+        String head = readContentsAsString(HEAD);
+        if (head.equals(branch)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
 
     }
 
@@ -565,6 +591,23 @@ public class Repository {
         b.createNewFile();
         String head = readHeadCommit();
         writeContents(b, head);
+    }
+
+
+    public static void rmBranch(String branch) {
+        File b = join(BRANCH, branch);
+        if (!b.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        String head = readContentsAsString(HEAD);
+        if (head.equals(branch)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+        if (!b.delete()) {
+            System.out.println("rm-branch failed.");
+        }
     }
     /**
      *

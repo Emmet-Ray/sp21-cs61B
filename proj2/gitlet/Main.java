@@ -133,6 +133,13 @@ public class Main {
                     throw new RuntimeException(e);
                 }
                 break;
+            case "rm-branch":
+                // todo : "rm-branch [branch name]"
+                initializedGitletRepository();
+                validateNumArgs("rm-branch", args, 2);
+                validateFormat();
+                Repository.rmBranch(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
