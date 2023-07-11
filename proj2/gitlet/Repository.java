@@ -417,6 +417,11 @@ public class Repository {
         checkoutHelper(commitID, file);
     }
 
+    /**
+     *  todo :
+     *         read the spec, complete this method
+     * @param branch
+     */
     public static void checkout3(String branch) {
 
     }
@@ -443,6 +448,32 @@ public class Repository {
             cwdFile.createNewFile();
         }
         writeContents(cwdFile, content);
+    }
+
+    /**
+     *  todo :
+     *         Prints out the ids of all commits that have the given commit message, one per line.
+     *         If there are multiple such commits, it prints the ids out on separate lines.
+     *      hint :
+     *           the hint for this command is the same as the one for global-log
+     *   todo : failure case
+     * @param commitMessage
+     */
+    public static void find(String commitMessage) {
+        List<String> allCommits = plainFilenamesIn(OBJECTS);
+        Commit pCommit;
+        // flag indicate whether there are such commits;
+        boolean flag = false;
+        for (String s : allCommits) {
+            pCommit = readObject(join(OBJECTS, s), Commit.class);
+            if (pCommit.getMessage().equals(commitMessage)) {
+                System.out.println(pCommit.SHA_1());
+                flag = true;
+            }
+        }
+        if (!flag) {
+            System.out.println("Found no commit with that message.");
+        }
     }
     /**
      *

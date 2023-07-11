@@ -108,7 +108,13 @@ public class Main {
                     System.exit(0);
                 }
                 break;
-
+            case "find":
+                // todo : "find [commit message]"
+                initializedGitletRepository();
+                validateNumArgs("find", args, 2);
+                validateFormat();
+                Repository.find(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
