@@ -122,6 +122,17 @@ public class Main {
                 validateFormat();
                 Repository.status();
                 break;
+            case "branch":
+                // todo : "branch [branch name]"
+                initializedGitletRepository();
+                validateNumArgs("branch", args, 2);
+                validateFormat();
+                try {
+                    Repository.branch(args[1]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);

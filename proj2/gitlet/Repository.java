@@ -537,7 +537,26 @@ public class Repository {
         }
     }
 
-    
+
+    /**
+     *  todo :
+     *      Creates a new branch with the given name
+     *      and points it at the current head commit
+     *
+     *  todo :  failure case
+     *
+     * @param branch the branch name
+     */
+    public static void branch(String branch) throws IOException {
+        File b = join(BRANCH, branch);
+        if (b.exists()) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
+        b.createNewFile();
+        String head = readContentsAsString(HEAD);
+        writeContents(b, head);
+    }
     /**
      *
      * @param sha1 the new content that HEAD & MASTER have
