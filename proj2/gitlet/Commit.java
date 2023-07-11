@@ -4,10 +4,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Repository.*;
 
@@ -99,11 +96,17 @@ public class Commit implements Serializable {
      *   update the blobs according to staging for addition
      *   todo : & staging for removal
      *          need to modify the signature
+     *
+     *   todo : need to verify if this removal update is right
       * @param additionContent  the staging for addition files
+     * @param removalContent the staging for removal files
      */
-    public void updateBlobReferences(Map<String, String> additionContent) {
+    public void updateBlobReferences(Map<String, String> additionContent, Set<String> removalContent) {
             for (String s : additionContent.keySet()) {
                     this.blobs.put(s, additionContent.get(s));
+            }
+            for (String s : removalContent) {
+                this.blobs.remove(s);
             }
     }
 

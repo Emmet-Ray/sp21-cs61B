@@ -259,7 +259,7 @@ public class Repository {
      */
     public static void commit(String message) throws IOException {
         /** failure cases */
-        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+        additionContent = (HashMap<String, String>) readObject(STAGING_FOR_ADDITION, HashMap.class);
         if (additionContent.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
@@ -269,19 +269,24 @@ public class Repository {
             System.exit(0);
         }
 
+        /** create new commit */
         Commit newCommit = new Commit(message);
-        newCommit.updateBlobReferences(additionContent);
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+        // update the blob references based on the addition & removal staging area
+        newCommit.updateBlobReferences(additionContent, removalContent);
 
         /** works after the commit */
         //clear staging area
         additionContent.clear();
-        Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
-        // todo : removal staging area
+        writeObject(STAGING_FOR_ADDITION, additionContent);
+        removalContent.clear();
+        writeObject(STAGING_FOR_REMOVAL, removalContent);
+        // update current branch
         changeHeadCommit(newCommit.SHA_1());
         // create the commit in OBJECTS
         File newCommitBlob = join(OBJECTS, newCommit.SHA_1());
         newCommitBlob.createNewFile();
-        Utils.writeObject(newCommitBlob, newCommit);
+        writeObject(newCommitBlob, newCommit);
     }
 
     /**
@@ -405,7 +410,6 @@ public class Repository {
     public static void checkout1(String file) throws IOException {
         String p = readHeadCommit();
         checkoutHelper(p, file);
-
     }
 
     /**
@@ -424,7 +428,7 @@ public class Repository {
 
     /**
      *  todo :
-     *         read the spec, complete this method
+     *      
      * @param branch
      */
     public static void checkout3(String branch) {
@@ -500,11 +504,16 @@ public class Repository {
      */
     public static void status() {
         System.out.println("=== Branches ===");
-        // todo : branch sections
         List<String> branches = plainFilenamesIn(BRANCH);
+        String currentBranch = readContentsAsString(HEAD);
         Collections.sort(branches);
-        
-        //iterate(branches);
+        for (String s : branches) {
+            if (s.equals(currentBranch)) {
+                System.out.println("*" + s);
+            } else {
+                System.out.println(s);
+            }
+        }
         System.out.println();
 
         System.out.println("=== Staged Files ===");
@@ -559,7 +568,7 @@ public class Repository {
     }
     /**
      *
-     * @param sha1 the new content that HEAD & MASTER have
+     * @param sha1 the new commit that the current branch points to
      */
     private static void changeHeadCommit(String sha1) {
         // read the current branch
