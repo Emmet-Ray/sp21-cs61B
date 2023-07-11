@@ -12,7 +12,7 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
        /** if no command line arguments input */
         if (args.length == 0) {
             System.out.println("Please enter a command.");
@@ -22,7 +22,11 @@ public class Main {
         switch(firstArg) {
             case "init":
                 validateNumArgs("init", args, 1);
-                Repository.init();
+                try {
+                    Repository.init();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
@@ -30,7 +34,11 @@ public class Main {
                 validateNumArgs("add", args, 2);
                 // TODO : implement the validateFormat()
                 validateFormat();
-                Repository.add(args[1]);
+                try {
+                    Repository.add(args[1]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case "commit":
                 // todo : "commit [message]"
@@ -38,7 +46,11 @@ public class Main {
                 validateNumArgs("commit", args, 2);
                 // TODO : implement the validateFormat()
                 validateFormat();
-                Repository.commit(args[1]);
+                try {
+                    Repository.commit(args[1]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case "rm":
                 // todo : "rm [file name]"
@@ -72,11 +84,19 @@ public class Main {
                 if (args.length == 3) {
                     validateFormat();
                     //"checkout -- [file name]"
-                    Repository.checkout1(args[2]);
+                    try {
+                        Repository.checkout1(args[2]);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 } else if (args.length == 4) {
                     validateFormat();
                     //"checkout [commit id] -- [file name]"
-                    Repository.checkout2(args[1], args[3]);
+                    try {
+                        Repository.checkout2(args[1], args[3]);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 } else if (args.length == 2){
                     validateFormat();
                     // todo 3. "checkout [branch name]"

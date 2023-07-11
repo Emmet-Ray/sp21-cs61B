@@ -418,7 +418,7 @@ public class Repository {
     }
 
     public static void checkout3(String branch) {
-        
+
     }
 
     /**
