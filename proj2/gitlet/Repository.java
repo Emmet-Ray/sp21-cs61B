@@ -502,7 +502,8 @@ public class Repository {
         // todo : branch sections
         List<String> branches = plainFilenamesIn(BRANCH);
         Collections.sort(branches);
-        iterate(branches);
+        
+        //iterate(branches);
         System.out.println();
 
         System.out.println("=== Staged Files ===");
@@ -542,8 +543,6 @@ public class Repository {
      *  todo :
      *      Creates a new branch with the given name
      *      and points it at the current head commit
-     *
-     *  todo :  failure case
      *
      * @param branch the branch name
      */
