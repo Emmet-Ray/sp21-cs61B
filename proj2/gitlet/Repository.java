@@ -64,8 +64,9 @@ public class Repository {
      *
      *  .gitlet/ --
      *      - objects / -- a directory that includes files including : commits, blobs(files)
-     *      - HEAD / -- a file that points to the current commit
-     *      - master / -- a file that represents the initial branch, also points to the current commit
+     *      - HEAD / -- a file that points to the current branch i.e. contains the branch name
+     *      - branch / --
+         *      - master / -- a file that represents the initial branch, also points to the current commit
      *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
      *      - removal / -- a file that represents the staging area for removal
      *      // TODO : to be continued...
@@ -125,8 +126,8 @@ public class Repository {
             initial.createNewFile();
         }
         Utils.writeObject(initial, initialCommit);
-        // both HEAD and master point to the initial commit i.e. contain its SHA-1 ID
-        changeHeadMaster(initialCommit.SHA_1());
+        writeContents(HEAD, "master");
+        changeHeadCommit(initialCommit.SHA_1());
     }
 
     /**
@@ -276,8 +277,7 @@ public class Repository {
         additionContent.clear();
         Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
         // todo : removal staging area
-        // "move" HEAD pointer & MASTER
-        changeHeadMaster(newCommit.SHA_1());
+        changeHeadCommit(newCommit.SHA_1());
         // create the commit in OBJECTS
         File newCommitBlob = join(OBJECTS, newCommit.SHA_1());
         newCommitBlob.createNewFile();
@@ -308,7 +308,8 @@ public class Repository {
             writeObject(STAGING_FOR_ADDITION, additionContent);
         }
 
-        String head = readContentsAsString(HEAD);
+        // set head as current head commit id
+        String head = readHeadCommit();
         Commit currentCommit = readObject(join(OBJECTS, head), Commit.class);
         HashMap<String, String> currentBolbs = currentCommit.getBlobs();
         if (currentBolbs != null && currentBolbs.containsKey(file)) {
@@ -347,7 +348,7 @@ public class Repository {
      *      For merge commits
      */
     public static void log() {
-        String p = readContentsAsString(HEAD);
+        String p = readHeadCommit();
         Commit pCommit = readObject(join(OBJECTS, p), Commit.class);
         // get this from chat GPT
         SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
@@ -402,7 +403,7 @@ public class Repository {
      * @param file
      */
     public static void checkout1(String file) throws IOException {
-        String p = readContentsAsString(HEAD);
+        String p = readHeadCommit();
         checkoutHelper(p, file);
 
     }
@@ -553,15 +554,28 @@ public class Repository {
             System.exit(0);
         }
         b.createNewFile();
-        String head = readContentsAsString(HEAD);
+        String head = readHeadCommit();
         writeContents(b, head);
     }
     /**
      *
      * @param sha1 the new content that HEAD & MASTER have
      */
-    private static void changeHeadMaster(String sha1) {
-        Utils.writeContents(HEAD, sha1);
-        Utils.writeContents(MASTER, sha1);
+    private static void changeHeadCommit(String sha1) {
+        // read the current branch
+        String b = readContentsAsString(HEAD);
+        // get the branch file, change it
+        File file = join(BRANCH, b);
+        writeContents(file, sha1);
+    }
+
+    /**
+     *
+     * @return the commit ID, HEAD points to
+     */
+    public static String readHeadCommit() {
+        String head = readContentsAsString(HEAD);
+        head = readContentsAsString(join(BRANCH, head));
+        return head;
     }
 }

@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static gitlet.Repository.HEAD;
-import static gitlet.Repository.OBJECTS;
+import static gitlet.Repository.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -56,7 +55,7 @@ public class Commit implements Serializable {
         this.message = message;
         // current time
         this.date = new Date();
-        String parent = Utils.readContentsAsString(HEAD);
+        String parent = readHeadCommit();
         this.parent = parent;
 
         File parentBlob = Utils.join(OBJECTS, parent);
