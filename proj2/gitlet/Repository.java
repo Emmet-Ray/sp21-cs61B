@@ -21,7 +21,8 @@ import static gitlet.Utils.*;
  *      - objects / -- a directory that includes files including : commits
  *      - blobs / -- a directory that includes blobs (files)
  *      - HEAD / -- a file that points to the current commit
- *      - master / -- a file that represents the initial branch, also points to the current commit
+ *      - branch / -- a directory that includes all branch files
+     *      - master / -- a file that represents the initial branch, also points to the current commit
  *      - stagingForAddition / -- a file that represents the staging area for addition, contains all the addition staging info.
  *      - removal / -- a file for staging for removal
  *      // TODO : to be continued...
@@ -44,7 +45,8 @@ public class Repository {
     static final File OBJECTS = join(GITLET_DIR, "objects");
 
     static final File BLOBS = join(GITLET_DIR, "blobs");
-    static final File MASTER = join(GITLET_DIR, "master");
+    static final File BRANCH = join(GITLET_DIR, "branch");
+    static final File MASTER = join(BRANCH, "master");
 
     static final File HEAD = join(GITLET_DIR, "HEAD");
 
@@ -81,6 +83,9 @@ public class Repository {
         if (!HEAD.exists()) {
             HEAD.createNewFile();
         }
+        if (!BRANCH.exists()) {
+            BRANCH.mkdir();
+        }
         if (!MASTER.exists()) {
             MASTER.createNewFile();
         }
@@ -98,7 +103,6 @@ public class Repository {
 
     /**
      * todo : need to VERIFY this 100% worked, so I reserve these TODOs.
-     *
      *
      * todo : Creates a new Gitlet version-control system in the current directory
      * todo : initial commit with commit message and date, no tracking files.
@@ -475,6 +479,65 @@ public class Repository {
             System.out.println("Found no commit with that message.");
         }
     }
+
+    /**
+     *  todo :
+     *      Displays what branches currently exist,and marks the current branch with a *
+     *      Also displays what files have been staged for addition or removal
+     *
+     *  todo :
+     *          Entries should be listed in lexicographic order,
+     *
+     * todo :
+     *    5 sections :
+     *      1. branches
+     *      2. staged files
+     *      3. removed files
+     *      4. modifications not staged for commit
+     *      5. untracked files
+     *
+     */
+    public static void status() {
+        System.out.println("=== Branches ===");
+        // todo : branch sections
+        List<String> branches = plainFilenamesIn(BRANCH);
+        Collections.sort(branches);
+        iterate(branches);
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+        TreeMap<String, String> copyAddition = new TreeMap<>(additionContent);
+        iterate(copyAddition.keySet());
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+        TreeSet<String> copyRemoval = new TreeSet<>(removalContent);
+        iterate(copyRemoval);
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+
+        System.out.println();
+
+
+        System.out.println("=== Untracked Files ===");
+
+        System.out.println();
+    }
+
+    /**
+     *  helper function of status, used to print the file names in [container]
+     * @param container
+     */
+    private static void iterate(Iterable<String> container) {
+        for (String s : container) {
+            System.out.println(s);
+        }
+    }
+
+    
     /**
      *
      * @param sha1 the new content that HEAD & MASTER have

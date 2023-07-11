@@ -115,6 +115,13 @@ public class Main {
                 validateFormat();
                 Repository.find(args[1]);
                 break;
+            case "status":
+                // todo : "status"
+                initializedGitletRepository();
+                validateNumArgs("status", args, 1);
+                validateFormat();
+                Repository.status();
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
