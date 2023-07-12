@@ -144,6 +144,17 @@ public class Main {
                 validateFormat(args);
                 Repository.rmBranch(args[1]);
                 break;
+            case "reset":
+                // todo : "reset [commit id]"
+                initializedGitletRepository();
+                validateNumArgs("reset", args, 2);
+                validateFormat(args);
+                try {
+                    Repository.reset(args[1]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
@@ -181,6 +192,7 @@ public class Main {
                     System.out.println("Incorrect operands.");
                     System.exit(0);
                 }
+                break;
         }
     }
 }

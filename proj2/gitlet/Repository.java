@@ -442,11 +442,7 @@ public class Repository {
      * @param file
      */
     public static void checkout2(String commitID, String file) throws IOException {
-        File commit = join(OBJECTS, commitID);
-        if (!commit.exists()) {
-            System.out.println("No commit with that id exists.");
-            System.exit(0);
-        }
+        commitExist(commitID);
         checkoutHelper(commitID, file);
     }
 
@@ -481,32 +477,14 @@ public class Repository {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
-        if (untrackedFiles(false)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
-        }
+        untrackedFiles();
         // clear the staging area
-        // todo : need to clear removal staging area ?
-        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
-        additionContent.clear();
-        writeObject(STAGING_FOR_ADDITION, additionContent);
-
-        head = readContentsAsString(join(BRANCH, branch));
+        clearStagingArea();
         //clear current branch
-        List<String> allCommits = plainFilenamesIn(CWD);
-        File cwdFile;
-        for (String s : allCommits) {
-            cwdFile = join(CWD, s);
-            cwdFile.delete();
-        }
+        clearCWD();
         // convert to branch's head files
-        Commit current = readObject(join(OBJECTS, head), Commit.class);
-        HashMap<String, String> blobs = current.getBlobs();
-        if (blobs != null) {
-            for (String s : blobs.keySet()) {
-                checkoutHelper(head, s);
-            }
-        }
+        head = readContentsAsString(join(BRANCH, branch));
+        checkoutCommit(head);
         // change HEAD to branch's head commit
         changedHead(branch);
     }
@@ -715,6 +693,29 @@ public class Repository {
             System.out.println("rm-branch failed.");
         }
     }
+
+    /**
+     * todo :
+     *      Checks out all the files tracked by the given commit.
+     * todo :
+     *      Removes tracked files that are not present in that commit
+     * todo :
+     *      Also moves the current branch’s head to that commit node
+     * todo : note
+     *      The [commit id] may be abbreviated as for checkout
+     * todo :
+     *      The staging area is cleared
+     * @param commitID
+     */
+    public static void reset(String commitID) throws IOException {
+        commitExist(commitID);
+        untrackedFiles();
+
+        clearCWD();
+        checkoutCommit(commitID);
+        changeHeadCommit(commitID);
+        clearStagingArea();
+    }
     /**
      *
      * @param sha1 the new commit that the current branch points to
@@ -738,5 +739,50 @@ public class Repository {
         String head = readContentsAsString(HEAD);
         head = readContentsAsString(join(BRANCH, head));
         return head;
+    }
+
+    /** below are some error check functions */
+
+    private static void commitExist(String commitID) {
+        File commit = join(OBJECTS, commitID);
+        if (!commit.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+    }
+
+    private static void untrackedFiles() {
+        if (untrackedFiles(false)) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+    }
+
+    private static void checkoutCommit(String commitID) throws IOException {
+        Commit current = readObject(join(OBJECTS, commitID), Commit.class);
+        HashMap<String, String> blobs = current.getBlobs();
+        if (blobs != null) {
+            for (String s : blobs.keySet()) {
+                checkoutHelper(commitID, s);
+            }
+        }
+    }
+
+    private static void clearCWD() {
+        List<String> allCommits = plainFilenamesIn(CWD);
+        File cwdFile;
+        for (String s : allCommits) {
+            cwdFile = join(CWD, s);
+            cwdFile.delete();
+        }
+    }
+
+    private static void clearStagingArea() {
+        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
+        additionContent.clear();
+        writeObject(STAGING_FOR_ADDITION, additionContent);
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+        removalContent.clear();
+        writeObject(STAGING_FOR_REMOVAL, removalContent);
     }
 }
