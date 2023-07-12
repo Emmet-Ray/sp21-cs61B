@@ -100,7 +100,11 @@ public class Main {
                 } else if (args.length == 2){
                     validateFormat();
                     // todo 3. "checkout [branch name]"
-                    Repository.checkout3(args[1]);
+                    try {
+                        Repository.checkout3(args[1]);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
 
                 } else {
                     // invalid

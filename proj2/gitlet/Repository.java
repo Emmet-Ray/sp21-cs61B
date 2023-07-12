@@ -446,7 +446,7 @@ public class Repository {
      *       unless the checked-out branch is the current branch
      * @param branch
      */
-    public static void checkout3(String branch) {
+    public static void checkout3(String branch) throws IOException {
         /** failure cases */
         File b = join(BRANCH, branch);
         if (!b.exists()) {
@@ -458,7 +458,32 @@ public class Repository {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
+        if (untrackedFiles(false)) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+        // clear the staging area
+        // todo : need to clear removal staging area ?
+        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
+        additionContent.clear();
+        writeObject(STAGING_FOR_ADDITION, additionContent);
 
+        head = readContentsAsString(join(BRANCH, branch));
+        //clear current branch
+        List<String> allCommits = plainFilenamesIn(CWD);
+        File cwdFile;
+        for (String s : allCommits) {
+            cwdFile = join(CWD, s);
+            cwdFile.delete();
+        }
+        // convert to branch's head files
+        Commit current = readObject(join(OBJECTS, head), Commit.class);
+        HashMap<String, String> blobs = current.getBlobs();
+        for (String s : blobs.keySet()) {
+            checkoutHelper(head, s);
+        }
+        // change HEAD to branch's head commit
+        changedHead(branch);
     }
 
     /**
@@ -560,10 +585,66 @@ public class Repository {
 
 
         System.out.println("=== Untracked Files ===");
-
+        untrackedFiles(true);
         System.out.println();
     }
 
+    /**
+     *
+     * @param print if true print the untracked files if any, if false , don't print
+     * @return  if there is untracked file
+     */
+    private static boolean untrackedFiles(boolean print) {
+        List<String> allFiles = plainFilenamesIn(CWD);
+        Collections.sort(allFiles);
+        File file;
+        boolean flag = false;
+        for (String s : allFiles) {
+            file = join(CWD, s);
+            // gitlet doesn't deal with subdirectories
+            if (file.isDirectory()) {
+                continue;
+            }
+            if (untrackedFilesHelper(s)) {
+                flag = true;
+                if (print) {
+                    System.out.println(s);
+                }
+            }
+        }
+        return flag;
+    }
+
+    /**
+     *  helper of untrackedFiles method, decide whether the one file is untracked
+     * @param file
+     * @return
+     */
+    private static boolean untrackedFilesHelper(String file) {
+
+        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
+        TreeMap<String, String> copyAddition = new TreeMap<>(additionContent);
+
+        for (String s : copyAddition.keySet()) {
+            if (s.equals(file)) {
+                return false;
+            }
+        }
+        String head = readHeadCommit();
+        Commit current = readObject(join(OBJECTS, head), Commit.class);
+        HashMap<String, String> blobs = current.getBlobs();
+        if (blobs != null) {
+            TreeMap<String, String> copyBlobs = new TreeMap<>(blobs);
+            // todo : the print order is not lexicographic order
+            for (String s : copyBlobs.keySet()) {
+                if (s.equals(file)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
     /**
      *  helper function of status, used to print the file names in [container]
      * @param container
@@ -621,6 +702,9 @@ public class Repository {
         writeContents(file, sha1);
     }
 
+    private static void changedHead(String branch) {
+        writeContents(HEAD, branch);
+    }
     /**
      *
      * @return the commit ID, HEAD points to
