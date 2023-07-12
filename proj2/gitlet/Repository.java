@@ -164,7 +164,7 @@ public class Repository {
         // get the SHA-1 code of the file content of CWD version
         File addedFile = join(CWD, file);
         String hash_addedFile = Utils.sha1(Files.readString(addedFile.toPath()));
-
+        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
         // todo : read the current commit from HEAD
         //         1. see if the file is already there
         //          2. if it is there && the current commit version & the current working version are the same, do not stage the file
@@ -180,7 +180,6 @@ public class Repository {
                 // if current commit version is the same as the cwd version
                 if (currentVersion.equals(hash_addedFile)) {
                     /**  read from the staging area */
-                    additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
                     if (additionContent.containsKey(file)) {
                         additionContent.remove(file);
                         writeObject(STAGING_FOR_ADDITION, additionContent);
