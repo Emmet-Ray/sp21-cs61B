@@ -145,6 +145,7 @@ public class Repository {
      * todo : If the current working version of the file is identical to the version in the current commit,
      *      do not stage it to be added, and remove it from the staging area if it is already there
      *      (as can happen when a file is changed, added, and then changed back to it’s original version)
+     *      the file will no longer be staged for removal (see gitlet rm), if it was at the time of the command.
      *   how i know "identical" ? i guess using hash code
      *   what is "the current commit" ? i guess some commit that pointer like HEAD points to ?
      *
@@ -165,6 +166,7 @@ public class Repository {
         File addedFile = join(CWD, file);
         String hash_addedFile = Utils.sha1(Files.readString(addedFile.toPath()));
         additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
         // todo : read the current commit from HEAD
         //         1. see if the file is already there
         //          2. if it is there && the current commit version & the current working version are the same, do not stage the file
@@ -183,6 +185,10 @@ public class Repository {
                     if (additionContent.containsKey(file)) {
                         additionContent.remove(file);
                         writeObject(STAGING_FOR_ADDITION, additionContent);
+                    }
+                    if (removalContent.contains(file)) {
+                        removalContent.remove(file);
+                        writeObject(STAGING_FOR_REMOVAL, removalContent);
                     }
                     return;
                 }
@@ -277,7 +283,8 @@ public class Repository {
     public static void commit(String message) throws IOException {
         /** failure cases */
         additionContent = (HashMap<String, String>) readObject(STAGING_FOR_ADDITION, HashMap.class);
-        if (additionContent.isEmpty()) {
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+        if (additionContent.isEmpty() && removalContent.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -495,8 +502,10 @@ public class Repository {
         // convert to branch's head files
         Commit current = readObject(join(OBJECTS, head), Commit.class);
         HashMap<String, String> blobs = current.getBlobs();
-        for (String s : blobs.keySet()) {
-            checkoutHelper(head, s);
+        if (blobs != null) {
+            for (String s : blobs.keySet()) {
+                checkoutHelper(head, s);
+            }
         }
         // change HEAD to branch's head commit
         changedHead(branch);

@@ -33,7 +33,7 @@ public class Main {
                 initializedGitletRepository();
                 validateNumArgs("add", args, 2);
                 // TODO : implement the validateFormat()
-                validateFormat();
+                validateFormat(args);
                 try {
                     Repository.add(args[1]);
                 } catch (IOException e) {
@@ -45,7 +45,7 @@ public class Main {
                 initializedGitletRepository();
                 validateNumArgs("commit", args, 2);
                 // TODO : implement the validateFormat()
-                validateFormat();
+                validateFormat(args);
                 try {
                     Repository.commit(args[1]);
                 } catch (IOException e) {
@@ -57,7 +57,7 @@ public class Main {
                 initializedGitletRepository();
                 validateNumArgs("rm", args, 2);
                 // TODO : implement the validateFormat()
-                validateFormat();
+                validateFormat(args);
                 Repository.rm(args[1]);
                 break;
             case "log":
@@ -65,7 +65,7 @@ public class Main {
                 initializedGitletRepository();
                 validateNumArgs("log", args, 1);
                 // TODO : implement the validateFormat()
-                validateFormat();
+                validateFormat(args);
                 Repository.log();
                 break;
             case "global-log":
@@ -73,7 +73,7 @@ public class Main {
                 initializedGitletRepository();
                 validateNumArgs("global-log", args, 1);
                 // TODO : implement the validateFormat()
-                validateFormat();
+                validateFormat(args);
                 Repository.globalLog();
                 break;
             case "checkout":
@@ -82,7 +82,7 @@ public class Main {
                  */
                 initializedGitletRepository();
                 if (args.length == 3) {
-                    validateFormat();
+                    validateFormat(args);
                     //"checkout -- [file name]"
                     try {
                         Repository.checkout1(args[2]);
@@ -90,7 +90,7 @@ public class Main {
                         throw new RuntimeException(e);
                     }
                 } else if (args.length == 4) {
-                    validateFormat();
+                    validateFormat(args);
                     //"checkout [commit id] -- [file name]"
                     try {
                         Repository.checkout2(args[1], args[3]);
@@ -98,7 +98,7 @@ public class Main {
                         throw new RuntimeException(e);
                     }
                 } else if (args.length == 2){
-                    validateFormat();
+                    validateFormat(args);
                     // todo 3. "checkout [branch name]"
                     try {
                         Repository.checkout3(args[1]);
@@ -116,21 +116,21 @@ public class Main {
                 // todo : "find [commit message]"
                 initializedGitletRepository();
                 validateNumArgs("find", args, 2);
-                validateFormat();
+                validateFormat(args);
                 Repository.find(args[1]);
                 break;
             case "status":
                 // todo : "status"
                 initializedGitletRepository();
                 validateNumArgs("status", args, 1);
-                validateFormat();
+                validateFormat(args);
                 Repository.status();
                 break;
             case "branch":
                 // todo : "branch [branch name]"
                 initializedGitletRepository();
                 validateNumArgs("branch", args, 2);
-                validateFormat();
+                validateFormat(args);
                 try {
                     Repository.branch(args[1]);
                 } catch (IOException e) {
@@ -141,7 +141,7 @@ public class Main {
                 // todo : "rm-branch [branch name]"
                 initializedGitletRepository();
                 validateNumArgs("rm-branch", args, 2);
-                validateFormat();
+                validateFormat(args);
                 Repository.rmBranch(args[1]);
                 break;
             default:
@@ -170,7 +170,17 @@ public class Main {
     }
 
     // TODO
-    public static void validateFormat() {
+    public static void validateFormat(String[] args) {
 
+        switch (args[0]) {
+            case "checkout":
+                if (args.length == 4 && !args[2].equals("--")) {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                } else if (args.length == 3 && !args[1].equals("--")) {
+                    System.out.println("Incorrect operands.");
+                    System.exit(0);
+                }
+        }
     }
 }
