@@ -170,9 +170,26 @@ public class Repository {
         //          2. if it is there && the current commit version & the current working version are the same, do not stage the file
         //          3. remove the file from the staging area if it is already there
 
+        // todo : reconstruct this nested if, if, if
+        String head = readHeadCommit();
+        Commit current = readObject(join(OBJECTS, head), Commit.class);
+        HashMap<String, String> blobs = current.getBlobs();
+        if (blobs != null) {
+            if (blobs.containsKey(file)) {
+                String currentVersion = blobs.get(file);
+                // if current commit version is the same as the cwd version
+                if (currentVersion.equals(hash_addedFile)) {
+                    /**  read from the staging area */
+                    additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
+                    if (additionContent.containsKey(file)) {
+                        additionContent.remove(file);
+                        writeObject(STAGING_FOR_ADDITION, additionContent);
+                    }
+                    return;
+                }
+            }
+        }
 
-        /**  read from the staging area */
-        additionContent = (HashMap<String, String>) Utils.readObject(STAGING_FOR_ADDITION, HashMap.class);
         // if already staged the file,
         // 1. compare the content between the already staged one and current working version
         if (additionContent.containsKey(file)) {
@@ -187,7 +204,7 @@ public class Repository {
              */
             additionContent.remove(file);
             File oldFile = join(BLOBS, old_sha_1);
-            if (!Utils.restrictedDelete(oldFile)) {
+            if (!oldFile.delete()) {
                 System.out.println("delete failed");
                 System.exit(0);
             }
@@ -205,7 +222,7 @@ public class Repository {
         // put the new mapping into staging addition area
         additionContent.put(file, hash_addedFile);
         // write to the staging area
-        Utils.writeObject(STAGING_FOR_ADDITION, additionContent);
+        writeObject(STAGING_FOR_ADDITION, additionContent);
     }
 
     /**
