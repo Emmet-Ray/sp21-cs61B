@@ -833,6 +833,7 @@ public class Repository {
             case 8:
                 conflict = true;
                 mergeConflict(file, otherVersion, currentVersion);
+                add(file);
                 break;
         }
         return conflict;
