@@ -748,17 +748,21 @@ public class Repository {
         untrackedFiles();
 
         specialMerge(branch);
-        generalMerge(branch);
+        boolean conflict = generalMerge(branch);
         String secondParent = readBranchHeadCommit(branch);
         commitHelper("Merged " + branch + " into " + readContentsAsString(HEAD) + ".", secondParent);
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
     }
 
     /**
      *  for every file in these 3 part : split point, other commit, current commit
      *  call generalMergeHelper method
      * @param branch
+     * @return return whether this merge encounter conflict
      */
-    private static void generalMerge(String branch) throws IOException {
+    private static boolean generalMerge(String branch) throws IOException {
         String splitCommit = splitPoint(branch);
         String branchHeadCommit = readBranchHeadCommit(branch);
         String currentBranchHeadCommit = readHeadCommit();
@@ -777,9 +781,13 @@ public class Repository {
         }
         allFiles.addAll(otherBlobs.keySet());
         allFiles.addAll(currentBlobs.keySet());
+        boolean conflict = false;
         for (String s : allFiles) {
-            generalMergeHelper(branch, s, splitBlobs, otherBlobs, currentBlobs);
+            if (generalMergeHelper(branch, s, splitBlobs, otherBlobs, currentBlobs)) {
+                conflict = true;
+            }
         }
+        return conflict;
     }
 
     /**
@@ -789,8 +797,9 @@ public class Repository {
      * @param splitBlobs
      * @param otherBlobs
      * @param currentBlobs
+     * @return return whether this file encountered conflict
      */
-    private static void generalMergeHelper
+    private static boolean generalMergeHelper
     (String branch, String file, HashMap<String, String> splitBlobs, HashMap<String, String> otherBlobs, HashMap<String, String> currentBlobs) throws IOException {
         String splitVersion;
         if (splitBlobs != null) {
@@ -801,6 +810,7 @@ public class Repository {
         String otherVersion = otherBlobs.get(file);
         String currentVersion = currentBlobs.get(file);
         String otherCommit = readBranchHeadCommit(branch);
+        boolean conflict = false;
         switch (generalMergeType(splitVersion, otherVersion, currentVersion)) {
             case 1:
                 if (otherBlobs.containsKey(file)) {
@@ -812,7 +822,7 @@ public class Repository {
                     break;
                 }
             case 2, 3, 4, 7:
-                return;
+                break;
             case 5:
                 checkout2(otherCommit, file);
                 add(file);
@@ -821,11 +831,33 @@ public class Repository {
                 rm(file);
                 break;
             case 8:
-                System.out.println("not implemented yet");
+                conflict = true;
+                mergeConflict(file, otherVersion, currentVersion);
                 break;
         }
+        return conflict;
     }
 
+    private static void mergeConflict(String file, String otherVersion, String currentVersion) throws IOException {
+        StringBuilder conflictContents = new StringBuilder("<<<<<<< HEAD\n");
+        if (currentVersion == null) {
+            conflictContents.append("");
+        } else {
+            conflictContents.append(readContentsAsString(join(BLOBS, currentVersion)));
+        }
+        conflictContents.append("=======\n");
+        if (otherVersion == null) {
+            conflictContents.append("");
+        } else {
+            conflictContents.append(readContentsAsString(join(BLOBS, otherVersion)));
+        }
+        conflictContents.append(">>>>>>>");
+        File conflictFile = join(CWD, file);
+        if (!conflictFile.exists()) {
+            conflictFile.createNewFile();
+        }
+        writeContents(conflictFile, conflictContents.toString());
+    }
     /**
      *
      * @param splitVersion
