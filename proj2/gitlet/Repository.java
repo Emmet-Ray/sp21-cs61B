@@ -763,7 +763,10 @@ public class Repository {
      * @return return whether this merge encounter conflict
      */
     private static boolean generalMerge(String branch) throws IOException {
-        String splitCommit = splitPoint(branch);
+        String branchCommit = readBranchHeadCommit(branch);
+        Commit splitPoint = splitPoint(branchCommit);
+        String splitCommit = splitPoint.SHA_1();
+        //String splitCommit = splitPoint(branch);
         String branchHeadCommit = readBranchHeadCommit(branch);
         String currentBranchHeadCommit = readHeadCommit();
         Commit split = readObject(join(OBJECTS, splitCommit), Commit.class);
@@ -892,7 +895,10 @@ public class Repository {
      * @throws IOException
      */
     private static void specialMerge(String branch) throws IOException {
-        String splitCommit = splitPoint(branch);
+        String branchCommit = readBranchHeadCommit(branch);
+        Commit splitPoint = splitPoint(branchCommit);
+        String splitCommit = splitPoint.SHA_1();
+        //String splitCommit = splitPoint(branch);
         String branchHeadCommit = readBranchHeadCommit(branch);
         String currentBranchHeadCommit = readHeadCommit();
         if (splitCommit.equals(branchHeadCommit)) {
@@ -910,20 +916,20 @@ public class Repository {
      *
      *  todo : this implementation is slow O(NM),
      *         N, M is the number of commits on the two branches respectively
-     * @param branch
+     * @param branchCommit
      * @return return the sha-1 of the split point
      */
-    private static String splitPoint(String branch) {
-        String branchCommit = readBranchHeadCommit(branch);
+    private static Commit splitPoint(String branchCommit) {
+        //String branchCommit = readBranchHeadCommit(branch);
         Commit pCommit = readObject(join(OBJECTS, branchCommit), Commit.class);
         while (pCommit.getBlobs() != null) {
             if (commonCommitWithCurrent(branchCommit)) {
-                return branchCommit;
+                return pCommit;
             }
             branchCommit = pCommit.getParent();
             pCommit = readObject(join(OBJECTS, branchCommit), Commit.class);
         }
-        return branchCommit;
+        return pCommit;
     }
 
     private static boolean commonCommitWithCurrent(String commitID) {
