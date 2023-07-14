@@ -281,6 +281,10 @@ public class Repository {
      * @param message the commit message
      */
     public static void commit(String message) throws IOException {
+        commitHelper(message, null);
+    }
+
+    private static void commitHelper(String message, String secondParent) throws IOException {
         /** failure cases */
         additionContent = (HashMap<String, String>) readObject(STAGING_FOR_ADDITION, HashMap.class);
         removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
@@ -294,17 +298,19 @@ public class Repository {
         }
 
         /** create new commit */
-        Commit newCommit = new Commit(message);
+        Commit newCommit;
+        if (secondParent != null) {
+            newCommit = new Commit(message, secondParent);
+        } else {
+            newCommit = new Commit(message);
+        }
         removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
         // update the blob references based on the addition & removal staging area
         newCommit.updateBlobReferences(additionContent, removalContent);
 
         /** works after the commit */
         //clear staging area
-        additionContent.clear();
-        writeObject(STAGING_FOR_ADDITION, additionContent);
-        removalContent.clear();
-        writeObject(STAGING_FOR_REMOVAL, removalContent);
+        clearStagingArea();
         // update current branch
         changeHeadCommit(newCommit.SHA_1());
         // create the commit in OBJECTS
@@ -387,6 +393,7 @@ public class Repository {
             // todo : merge commit
             System.out.println("===");
             System.out.println("commit " + pCommit.SHA_1());
+            mergeLine(pCommit);
             System.out.println("Date: " + sdf.format(pCommit.getDate()));
             System.out.println(pCommit.getMessage());
             System.out.println();
@@ -412,9 +419,17 @@ public class Repository {
             // todo : merge commit
             System.out.println("===");
             System.out.println("commit " + pCommit.SHA_1());
+            mergeLine(pCommit);
             System.out.println("Date: " + sdf.format(pCommit.getDate()));
             System.out.println(pCommit.getMessage());
             System.out.println();
+        }
+    }
+    private static void mergeLine(Commit commit) {
+        String secondParent = commit.getSecondParent();
+        if (secondParent != null) {
+            String parent = commit.getParent();
+            System.out.println("Merge: " + parent.substring(0, 7) + " " + secondParent.substring(0, 7));
         }
     }
 
@@ -679,11 +694,8 @@ public class Repository {
 
 
     public static void rmBranch(String branch) {
+        branchExists(branch);
         File b = join(BRANCH, branch);
-        if (!b.exists()) {
-            System.out.println("A branch with that name does not exist.");
-            System.exit(0);
-        }
         String head = readContentsAsString(HEAD);
         if (head.equals(branch)) {
             System.out.println("Cannot remove the current branch.");
@@ -716,6 +728,216 @@ public class Repository {
         changeHeadCommit(commitID);
         clearStagingArea();
     }
+
+    /**
+     *  todo :
+     *      Merges files from the given branch into the current branch.
+     *      split point
+
+     *  todo : general rules
+     *
+     *
+     *
+     * @param branch
+     */
+    public static void merge(String branch) throws IOException {
+        /** failure cases */
+        uncommittedChanges();
+        branchExists(branch);
+        mergeWithSelf(branch);
+        untrackedFiles();
+
+        specialMerge(branch);
+        generalMerge(branch);
+        String secondParent = readBranchHeadCommit(branch);
+        commitHelper("Merged " + branch + " into " + readContentsAsString(HEAD) + ".", secondParent);
+    }
+
+    /**
+     *  for every file in these 3 part : split point, other commit, current commit
+     *  call generalMergeHelper method
+     * @param branch
+     */
+    private static void generalMerge(String branch) throws IOException {
+        String splitCommit = splitPoint(branch);
+        String branchHeadCommit = readBranchHeadCommit(branch);
+        String currentBranchHeadCommit = readHeadCommit();
+        Commit split = readObject(join(OBJECTS, splitCommit), Commit.class);
+        HashMap<String, String> splitBlobs = split.getBlobs();
+        Commit other = readObject(join(OBJECTS, branchHeadCommit), Commit.class);
+        HashMap<String, String> otherBlobs = other.getBlobs();
+        Commit current = readObject(join(OBJECTS, currentBranchHeadCommit), Commit.class);
+        HashMap<String, String> currentBlobs = current.getBlobs();
+
+        Set<String> allFiles;
+        if (splitBlobs != null) { // split point is not initial commit
+            allFiles = new HashSet<>(splitBlobs.keySet());
+        } else {
+            allFiles = new HashSet<>();
+        }
+        allFiles.addAll(otherBlobs.keySet());
+        allFiles.addAll(currentBlobs.keySet());
+        for (String s : allFiles) {
+            generalMergeHelper(branch, s, splitBlobs, otherBlobs, currentBlobs);
+        }
+    }
+
+    /**
+     *  deal with the one file
+     *
+     * @param file
+     * @param splitBlobs
+     * @param otherBlobs
+     * @param currentBlobs
+     */
+    private static void generalMergeHelper
+    (String branch, String file, HashMap<String, String> splitBlobs, HashMap<String, String> otherBlobs, HashMap<String, String> currentBlobs) throws IOException {
+        String splitVersion;
+        if (splitBlobs != null) {
+            splitVersion = splitBlobs.get(file);
+        } else {
+            splitVersion = null;
+        }
+        String otherVersion = otherBlobs.get(file);
+        String currentVersion = currentBlobs.get(file);
+        String otherCommit = readBranchHeadCommit(branch);
+        switch (generalMergeType(splitVersion, otherVersion, currentVersion)) {
+            case 1:
+                if (otherBlobs.containsKey(file)) {
+                    checkout2(otherCommit, file);
+                    add(file);
+                    break;
+                } else {
+                    rm(file);
+                    break;
+                }
+            case 2, 3, 4, 7:
+                return;
+            case 5:
+                checkout2(otherCommit, file);
+                add(file);
+                break;
+            case 6:
+                rm(file);
+                break;
+            case 8:
+                System.out.println("not implemented yet");
+                break;
+        }
+    }
+
+    /**
+     *
+     * @param splitVersion
+     * @param otherVersion
+     * @param currentVersion
+     * @return  return 1 for the first general type in the spec, 2 for the second and so on.
+     */
+    private static int generalMergeType(String splitVersion, String otherVersion, String currentVersion) {
+         if (splitVersion != null && splitVersion.equals(currentVersion) && !splitVersion.equals(otherVersion)) {
+             return 1;
+         } else if (splitVersion != null && !splitVersion.equals(currentVersion) && splitVersion.equals(otherVersion)) {
+             return 2;
+         } else if ((splitVersion != null && otherVersion == null && currentVersion == null) || (splitVersion != null && otherVersion != null && otherVersion.equals(currentVersion))) {
+             return 3;
+         } else if (splitVersion == null && otherVersion == null && currentVersion != null) {
+             return 4;
+         } else if (splitVersion == null && otherVersion != null && currentVersion == null) {
+             return 5;
+         } else if (splitVersion != null && otherVersion == null && splitVersion.equals(currentVersion)) {
+             return 6;
+         } else if (splitVersion != null && splitVersion.equals(otherVersion) && currentVersion == null) {
+             return 7;
+         } else {
+             return 8;
+         }
+    }
+
+    /**
+     *  special cases: the split point is current branch / given branch
+     * @param branch
+     * @throws IOException
+     */
+    private static void specialMerge(String branch) throws IOException {
+        String splitCommit = splitPoint(branch);
+        String branchHeadCommit = readBranchHeadCommit(branch);
+        String currentBranchHeadCommit = readHeadCommit();
+        if (splitCommit.equals(branchHeadCommit)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+        if (splitCommit.equals(currentBranchHeadCommit)) {
+            checkout3(branch);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+    }
+
+    /**
+     *
+     *  todo : this implementation is slow O(NM),
+     *         N, M is the number of commits on the two branches respectively
+     * @param branch
+     * @return return the sha-1 of the split point
+     */
+    private static String splitPoint(String branch) {
+        String branchCommit = readBranchHeadCommit(branch);
+        Commit pCommit = readObject(join(OBJECTS, branchCommit), Commit.class);
+        while (pCommit.getBlobs() != null) {
+            if (commonCommitWithCurrent(branchCommit)) {
+                return branchCommit;
+            }
+            branchCommit = pCommit.getParent();
+            pCommit = readObject(join(OBJECTS, branchCommit), Commit.class);
+        }
+        return branchCommit;
+    }
+
+    private static boolean commonCommitWithCurrent(String commitID) {
+        String currentCommit = readHeadCommit();
+        Commit pCommit = readObject(join(OBJECTS, currentCommit), Commit.class);
+        while (pCommit.getBlobs() != null) {
+            if (currentCommit.equals(commitID)) {
+                return true;
+            }
+            currentCommit = pCommit.getParent();
+            pCommit = readObject(join(OBJECTS, currentCommit), Commit.class);
+        }
+        return false;
+    }
+
+    /**
+     *  check failure case, print error message
+     */
+    private static void mergeWithSelf(String branch) {
+        String currentBranch = readContentsAsString(HEAD);
+        if (currentBranch.equals(branch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+    }
+    /**
+     *  check failure case, print error message
+     */
+    private static void uncommittedChanges() {
+        additionContent = readObject(STAGING_FOR_ADDITION, HashMap.class);
+        removalContent = readObject(STAGING_FOR_REMOVAL, HashSet.class);
+        if (!additionContent.isEmpty() || !removalContent.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+    }
+
+    /**
+     *  check failure case, print error message
+     */
+    private static void branchExists(String branch) {
+        File b = join(BRANCH, branch);
+        if (!b.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+    }
     /**
      *
      * @param sha1 the new commit that the current branch points to
@@ -736,11 +958,14 @@ public class Repository {
      * @return the commit ID, HEAD points to
      */
     public static String readHeadCommit() {
-        String head = readContentsAsString(HEAD);
-        head = readContentsAsString(join(BRANCH, head));
-        return head;
+        String currentBranch = readContentsAsString(HEAD);
+        return readBranchHeadCommit(currentBranch);
     }
 
+    private static String readBranchHeadCommit(String branch) {
+        String head = readContentsAsString(join(BRANCH, branch));
+        return head;
+    }
     /** below are some error check functions */
 
     private static void commitExist(String commitID) {

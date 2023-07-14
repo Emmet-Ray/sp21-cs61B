@@ -155,6 +155,16 @@ public class Main {
                     throw new RuntimeException(e);
                 }
                 break;
+            case "merge":
+                initializedGitletRepository();
+                validateNumArgs("merge", args, 2);
+                validateFormat(args);
+                try {
+                    Repository.merge(args[1]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);

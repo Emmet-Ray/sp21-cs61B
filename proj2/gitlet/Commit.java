@@ -30,6 +30,8 @@ public class Commit implements Serializable {
 
     private String parent;
 
+    // second parent for merge commits
+    private String secondParent = null;
     private HashMap<String, String> blobs;
 
     /**
@@ -64,7 +66,25 @@ public class Commit implements Serializable {
                 this.blobs.put(s, parentCommit.blobs.get(s));
             }
         }
+    }
 
+    public Commit(String message, String secondParent) {
+        this.message = message;
+        // current time
+        this.date = new Date();
+        String parent = readHeadCommit();
+        this.parent = parent;
+        this.secondParent = secondParent;
+
+        File parentBlob = Utils.join(OBJECTS, parent);
+        Commit parentCommit = Utils.readObject(parentBlob, Commit.class);
+        this.blobs = new HashMap<>();
+        // parent commit is not initial commit
+        if (parentCommit.blobs != null) {
+            for (String s : parentCommit.blobs.keySet()) {
+                this.blobs.put(s, parentCommit.blobs.get(s));
+            }
+        }
     }
 
     public String getMessage() {
@@ -77,6 +97,10 @@ public class Commit implements Serializable {
 
     public String getParent() {
         return parent;
+    }
+
+    public String getSecondParent() {
+        return secondParent;
     }
 
     public HashMap<String, String> getBlobs() {
