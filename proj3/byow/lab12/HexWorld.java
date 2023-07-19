@@ -149,6 +149,8 @@ public class HexWorld {
             singleHexagon(size, hexWorld, x + xStep(size), yPoisition);
             return;
         }
+        // for "even level", print 3 single hexagon
+        // for "odd level", print 2 single hexagon
         if (level % 2 == 0) {
             for (int xPosition = x; j < 3; xPosition += xStep(size), j += 1) {
                 singleHexagon(size, hexWorld, xPosition, yPoisition);
@@ -162,6 +164,7 @@ public class HexWorld {
 
     public static void hexagonWorld(int size, TETile[][] hexWorld,int x, int y) {
         int level = 0;
+        // total 9 level according to the lab 12 spec
         for (int yPoisition = y; level < 9; yPoisition += yStep(size), level += 1) {
             oneLevel(level, hexWorld, size, x, yPoisition);
         }
