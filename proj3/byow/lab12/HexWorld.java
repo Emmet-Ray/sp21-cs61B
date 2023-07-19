@@ -176,7 +176,7 @@ public class HexWorld {
         TETile[][] test = new TETile[WIDTH][HEIGHT];
         initializeWorld(test);
         // bottom left position
-        int x = 10;
+        int x = 35;
         int y = 10;
         int size = 3;
         hexagonWorld(size, test, x, y);
