@@ -7,7 +7,9 @@ import edu.princeton.cs.algs4.Graph;
 
 import java.awt.*;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.TreeSet;
 
 public class Engine {
     TERenderer ter = new TERenderer();
@@ -23,7 +25,8 @@ public class Engine {
 
     private Random random = null;
 
-    private HashSet<Room> existingRooms = new HashSet<>();
+    private TreeSet<Room> existingRooms = new TreeSet<>();
+
 
 
     private class Position {
@@ -40,6 +43,12 @@ public class Engine {
             return this.x == position.x && this.y == position.y;
         }
 
+        @Override
+        public String toString() {
+            String result = "(" + x + ", " + y + ")";
+            return result;
+        }
+
 
     }
 
@@ -47,7 +56,7 @@ public class Engine {
      *  class for rooms & hallways
      *  hallway is a specific type of rooms
      */
-    private class Room {
+    private class Room implements Comparable<Room>{
         // position of anchor i.e. left bottom point of the room
         Position position;
         int width;
@@ -65,12 +74,13 @@ public class Engine {
         /*
         *  decide whether this room is overlapping with existing rooms or not
          */
-        public boolean overlap(HashSet<Room> existingRoom) {
+        public boolean overlap(TreeSet<Room> existingRoom) {
             for (Room room : existingRoom) {
                 if (overlapWithRoom(room)) {
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -99,6 +109,24 @@ public class Engine {
         // same as shiftX
         public int shiftY(int dy) {
             return this.position.y + dy;
+        }
+
+        @Override
+        public int compareTo(Room o) {
+            if (this.position.x == o.position.x) {
+                return this.position.y - o.position.y;
+            }
+            return this.position.x - o.position.x;
+        }
+
+        /**
+         *
+         * @param room
+         * @return (squared) distance between the middle points
+         */
+        public double distanceTo(Room room) {
+            return  Math.pow((this.shiftX(this.width / 2) - room.shiftX(room.width / 2)), 2)
+                    + Math.pow((this.shiftY(this.length / 2)- room.shiftY(room.length / 2)), 2);
         }
     }
     /**
@@ -147,23 +175,154 @@ public class Engine {
 
         drawRooms(finalWorldFrame);
         drawHallways(finalWorldFrame);
+        /*
+        Position start = new Position(1, 0);
+        Position end = new Position(1,6);
+        drawVerticalHallWay(finalWorldFrame, start, end);
+         */
         return finalWorldFrame;
     }
 
     /**
      *  todo : need to decide the algorithm to generate hallways that link all rooms
      *          maybe : dog leg algorithm ???
-     * @param finalWorldFrame
+     * @param world
      */
-    private void drawHallways(TETile[][] finalWorldFrame) {
-        int i = 0;
-        for (Room room : existingRooms) {
-            if (i == 2) {
-                break;
+    private void drawHallways(TETile[][] world) {
+        Room currentRoom = existingRooms.first();
+        Room closest;
+        while (!existingRooms.isEmpty()) {
+            existingRooms.remove(currentRoom);
+            if (!existingRooms.isEmpty()) {
+                closest = connectWithClosestRoom(world, currentRoom);
+                System.out.println(currentRoom.position);
+                System.out.println(closest.position);
+                currentRoom = closest;
             }
-            finalWorldFrame[room.position.x][room.position.y] = Tileset.FLOWER;
-            i += 1;
         }
+    }
+
+    /**
+     *
+     * @param world
+     * @param currentRoom
+     * @return the closest room to currentRoom
+     */
+    private Room connectWithClosestRoom(TETile[][] world, Room currentRoom) {
+        Room closest = findClosest(currentRoom);
+        connectWithClosestRoom_Helper(world, currentRoom, closest);
+        return closest;
+    }
+
+    private Room findClosest(Room currentRoom) {
+        Room closest = existingRooms.first();
+        double closestDistance = currentRoom.distanceTo(closest);
+        for (Room r : existingRooms) {
+            if (r.distanceTo(currentRoom) < closestDistance) {
+                closest = r;
+                closestDistance = r.distanceTo(currentRoom);
+            }
+        }
+        System.out.println(closestDistance);
+        return closest;
+    }
+
+    /**
+     *  todo :
+     *      different kinds of connections, different kind of position relationships
+     */
+    private void connectWithClosestRoom_Helper(TETile[][] world, Room currentRoom, Room closest) {
+        if (verticalHallways(world, currentRoom, closest)) {
+            return;
+        }
+        if (horizontalHallways(world, currentRoom, closest)) {
+            return;
+        }
+    }
+
+    private boolean horizontalHallways(TETile[][] world, Room currentRoom, Room closest) {
+        int currentYPosition = currentRoom.shiftY(currentRoom.length / 2);
+        if (withinBounds(currentYPosition, closest.shiftY(0), closest.shiftY(closest.length - 1))) {
+            horizontalHallways_Helper(world, currentRoom, closest, currentYPosition);
+            return true;
+        }
+        int closestYPosition = closest.shiftY(closest.length / 2);
+        if (withinBounds(closestYPosition, currentRoom.shiftY(0), currentRoom.shiftY(currentRoom.length - 1))) {
+            horizontalHallways_Helper(world, currentRoom, closest, closestYPosition);
+            return true;
+        }
+        return false;
+    }
+
+    private void horizontalHallways_Helper(TETile[][] world, Room currentRoom, Room closest, int yPosition) {
+        System.out.println("in horizontal hallway helper");
+        // closest is in the left of the current room
+        if (closest.shiftX(closest.width - 1) < currentRoom.shiftX(0)) {
+            //System.out.println("closest is on the left of the current room");
+            Position start = new Position(closest.shiftX(closest.width - 1), yPosition);
+            Position end = new Position(currentRoom.shiftX(0), yPosition);
+            drawHorizontalHallway(world, start, end);
+        } else {
+            //System.out.println("closest is on the right of the current room");
+            Position start = new Position(currentRoom.shiftX(currentRoom.width - 1), yPosition);
+            Position end = new Position(closest.shiftX(0), yPosition);
+            drawHorizontalHallway(world, start, end);
+        }
+    }
+
+    private void drawHorizontalHallway(TETile[][] world, Position start, Position end) {
+        int yPosition = start.y;
+        for (int i = start.x; i <= end.x; i++) {
+            world[i][yPosition - 1] = Tileset.WALL;
+            world[i][yPosition] = Tileset.FLOOR;
+            world[i][yPosition + 1] = Tileset.WALL;
+        }
+    }
+    private boolean verticalHallways(TETile[][] world, Room currentRoom, Room closest) {
+        int currenXPosition = currentRoom.shiftX(currentRoom.width / 2);
+        if (xPositionWithinBounds(currenXPosition, closest)) {
+            verticalHallway_Helper(world, currentRoom, closest, currenXPosition);
+            return true;
+        }
+        int closestXPosition = closest.shiftX(closest.width / 2);
+        if (xPositionWithinBounds(closestXPosition, currentRoom)) {
+            verticalHallway_Helper(world, currentRoom, closest, closestXPosition);
+            return true;
+        }
+        return false;
+    }
+    private void verticalHallway_Helper(TETile[][] world, Room currentRoom, Room closest, int xPosition) {
+        System.out.println("in vertical hallway helper");
+        if (closest.shiftY(closest.length) <= currentRoom.shiftY(0) ) {
+            Position start = new Position(xPosition, closest.shiftY(closest.length - 1));
+            Position end = new Position(xPosition, currentRoom.shiftY(0));
+            drawVerticalHallWay(world, start, end);
+        } else {
+            Position start = new Position(xPosition, currentRoom.shiftY(currentRoom.length - 1));
+            Position end = new Position(xPosition, closest.shiftY(0));
+            drawVerticalHallWay(world, start, end);
+        }
+    }
+    private void drawVerticalHallWay(TETile[][] world, Position start, Position end) {
+        int xPosition = start.x;
+        for (int i = start.y; i <= end.y; i++) {
+            world[xPosition - 1][i] = Tileset.WALL;
+            world[xPosition][i] = Tileset.FLOOR;
+            world[xPosition + 1][i] = Tileset.WALL;
+        }
+    }
+
+    /*
+       return true if bottom < x < top
+     */
+    private boolean withinBounds(int x, int bottom, int top) {
+        return x > bottom && x < top;
+    }
+    private boolean xPositionWithinBounds(int x, Room room) {
+        if (x > room.position.x && x < (room.position.x + room.width - 1)) {
+            return true;
+        }
+        return false;
     }
 
     private void drawRooms(TETile[][] finalWorldFrame) {
