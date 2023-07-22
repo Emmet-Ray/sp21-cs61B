@@ -440,7 +440,7 @@ public class Engine {
     }
 
     private void drawRooms(TETile[][] finalWorldFrame) {
-        int x = random.nextInt(ROOM_NUMBER_MIN, ROOM_NUMBER_MAX);
+        int x = RandomUtils.uniform(random, ROOM_NUMBER_MIN, ROOM_NUMBER_MAX);
         //System.out.println("number of room : " + x);
         for (int i = 0; i < x; i++) {
             drawRandomRoom(finalWorldFrame);
@@ -480,8 +480,8 @@ public class Engine {
      * @return a random position
      */
     private Position getRandomPosition() {
-        int x = random.nextInt(WIDTH - ROOM_WIDTH);
-        int y = random.nextInt(HEIGHT - ROOM_HEIGHT);
+        int x = RandomUtils.uniform(random, WIDTH - ROOM_WIDTH);
+        int y = RandomUtils.uniform(random, HEIGHT - ROOM_HEIGHT);
         Position p = new Position(x, y);
         return p;
     }
@@ -489,13 +489,13 @@ public class Engine {
     private Room getRandomRoom(boolean hallway) {
         Room room = null;
         Position p = getRandomPosition();
-        int length = random.nextInt(3, ROOM_HEIGHT);
+        int length = RandomUtils.uniform(random, 3, ROOM_HEIGHT);
         if (hallway) {
-            int width = random.nextInt(3, 4);
+            int width = RandomUtils.uniform(random, 3, 4);
             // todo : vertical
             room = new Room(p, width,length, true, false);
         } else {
-            int width = random.nextInt(3, ROOM_WIDTH);
+            int width = RandomUtils.uniform(random, 3, ROOM_WIDTH);
             room = new Room(p, width,length, false, false);
         }
         return room;
