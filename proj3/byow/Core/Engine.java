@@ -7,6 +7,8 @@ import edu.princeton.cs.algs4.Graph;
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.*;
+import java.io.*;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -30,9 +32,13 @@ public class Engine {
 
     private enum DIRECTION {LEFT_ABOVE, RIGHT_ABOVE, LEFT_BELOW, RIGHT_BELOW};
     // mark where avatar is
-    private Position avatarPosition;
+    private Position avatarPosition = new Position(0, 0);
 
+    static final File CWD = new File(System.getProperty("user.dir"));
 
+    public static File join(File first, String... others) {
+        return Paths.get(first.getPath(), others).toFile();
+    }
     private class Position {
         int x;
         int y;
@@ -143,12 +149,12 @@ public class Engine {
      *  select the first room from [existingRooms]
      *  draw the avatar in the (shiftX(1), shiftY(1))
      */
-    private void drawAvatar(TETile[][] world) {
+    private void initializeAvatar(TETile[][] world) {
        Room firstRoom = existingRooms.first();
        int x = firstRoom.shiftX(1);
        int y = firstRoom.shiftY(1);
-       avatarPosition = new Position(x, y);
-       world[x][y] = Tileset.AVATAR;
+       avatarPosition.x = x;
+       avatarPosition.y = y;
     }
     /**
      *  need to decide the algorithm to generate hallways that link all rooms
@@ -509,6 +515,104 @@ public class Engine {
         StdDraw.show();
     }
 
+    private void moveAvastar(TETile[][] world, String movement, String seed) {
+
+        for (int i = 0; i < movement.length(); i++) {
+           if (i + 1 < movement.length() && movement.substring(i, i +2).equals(":q")) {
+               writeFile(movement, i, seed);
+               break;
+           }
+           moveOneStep(world, movement.substring(i, i + 1));
+        }
+    }
+
+    private void moveOneStep(TETile[][] world, String movement) {
+        Position newPosition;
+        switch (movement) {
+            case "w":
+                newPosition = new Position(avatarPosition.x, avatarPosition.y + 1);
+                changeAvatarPosition(world, newPosition);
+                break;
+            case "s":
+                newPosition = new Position(avatarPosition.x, avatarPosition.y - 1);
+                changeAvatarPosition(world, newPosition);
+                break;
+            case "a":
+                newPosition = new Position(avatarPosition.x - 1, avatarPosition.y);
+                changeAvatarPosition(world, newPosition);
+                break;
+            case "d":
+                newPosition = new Position(avatarPosition.x + 1, avatarPosition.y);
+        //        System.out.println("get here ");
+                changeAvatarPosition(world, newPosition);
+                break;
+            default:
+                System.out.println("unknown movement : " + movement);
+        }
+    }
+    private void changeAvatarPosition(TETile[][] world, Position newPosition) {
+         if (isWALL(world, newPosition)) {
+             return;
+         }
+         world[avatarPosition.x][avatarPosition.y] = Tileset.FLOOR;
+         world[newPosition.x][newPosition.y] = Tileset.AVATAR;
+
+         // change old avatar position to new position
+         avatarPosition.x = newPosition.x;
+         avatarPosition.y = newPosition.y;
+    }
+
+    private boolean isWALL(TETile[][] world, Position newPosition) {
+        return world[newPosition.x][newPosition.y].equals(Tileset.WALL);
+    }
+
+    private static void writeFile(String movement, int index, String seed) {
+        File saveFile = join(CWD, "savedFile.txt");
+        if (!saveFile.exists()) {
+            try {
+                saveFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        BufferedWriter writer;
+        try {
+            writer = new BufferedWriter(new FileWriter(saveFile));
+            writer.write(seed + "\n");
+            writer.write(movement.substring(0, index));
+            // do not forget this
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private static SavedFile readFile(String fileName) {
+        File savedFile = join(CWD, fileName);
+        SavedFile result;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(savedFile));
+
+            String seed = reader.readLine();
+            String oldMovements = reader.readLine();
+            result = new SavedFile(seed, oldMovements);
+            reader.close();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    static class SavedFile {
+        String seed;
+        String oldMovements;
+        SavedFile(String seed, String oldMovements) {
+            this.seed = seed;
+            this.oldMovements = oldMovements;
+        }
+    }
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
@@ -549,31 +653,42 @@ public class Engine {
         TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
         Engine.fillOut(finalWorldFrame);
 
-        // get seed from input string, for now, input just seed
-        String seed = input.substring(1, input.length() - 1) ;
-        System.out.println(seed);
-        random = new Random(Long.parseLong(seed));
+        String seed = "";
+        String movements = "";
+        input = input.toLowerCase();
+        // parse input
+        if (input.substring(0, 1).equals("n")) {
+            seed = input.substring(1, input.indexOf("s")) ;
+            movements = input.substring(input.indexOf("s") + 1, input.length());
+            random = new Random(Long.parseLong(seed));
+        } else if (input.substring(0, 1).equals("l")) {
+            SavedFile savedFile = readFile("savedFile.txt");
+            seed = savedFile.seed;
+            random = new Random(Long.parseLong(savedFile.seed));
+            movements = movements + savedFile.oldMovements + input.substring(1, input.length());
+        }
 
         drawRooms(finalWorldFrame);
-        drawAvatar(finalWorldFrame);
+        initializeAvatar(finalWorldFrame);
         drawHallways(finalWorldFrame);
+        moveAvastar(finalWorldFrame, movements, seed);
 
         return finalWorldFrame;
     }
 
     /* todo :
-            1. HUD
-            2. get input from keyboard / string
-            3. move avatar
+            2. get input from keyboard
             4. sava & load
      */
     public static void main(String[] args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         Engine engine = new Engine();
-        String seed = "n123s";
-        TETile[][] world = engine.interactWithInputString(seed);
+        //String input = "n123sddddssssss:qddd";
+        String input = "lsssddd:q";
+        TETile[][] world = engine.interactWithInputString(input);
         ter.renderFrame(world);
+
         while (true) {
             StdDraw.pause(200);
             renderFrame(world);
