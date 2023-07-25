@@ -2,6 +2,7 @@ package byow.lab13;
 
 import byow.Core.RandomUtils;
 import edu.princeton.cs.introcs.StdDraw;
+import edu.princeton.cs.introcs.StdRandom;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -28,7 +29,7 @@ public class MemoryGame {
                                                    "You got this!", "You're a star!", "Go Bears!",
                                                    "Too easy for you!", "Wow, so impressive!"};
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         if (args.length < 1) {
             System.out.println("Please enter a seed");
             return;
@@ -37,6 +38,7 @@ public class MemoryGame {
         long seed = Long.parseLong(args[0]);
         MemoryGame game = new MemoryGame(40, 40, seed);
         game.startGame();
+
     }
 
     public MemoryGame(int width, int height, long seed) {
@@ -53,32 +55,95 @@ public class MemoryGame {
         StdDraw.clear(Color.BLACK);
         StdDraw.enableDoubleBuffering();
 
-        //TODO: Initialize random number generator
+        // Initialize random number generato
+        rand = new Random(seed);
     }
 
     public String generateRandomString(int n) {
-        //TODO: Generate random string of letters of length n
-        return null;
+        if (n <= 0) {
+            throw new IllegalArgumentException("string length [n] should be bigger than 0.");
+        }
+        // Generate random string of letters of length n
+        String result = "";
+        int index;
+        for (int i = 0; i < n; i++) {
+           index = rand.nextInt(CHARACTERS.length);
+           result += CHARACTERS[index];
+        }
+        return result;
     }
 
     public void drawFrame(String s) {
         //TODO: Take the string and display it in the center of the screen
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setPenColor(Color.white);
+
+        StdDraw.text(5, 39, "Round : " + round);
+        StdDraw.text(33, 39, "good job!");
+        StdDraw.text(width / 2, height / 2, s);
+
+        StdDraw.show();
         //TODO: If game is not over, display relevant game information at the top of the screen
     }
 
-    public void flashSequence(String letters) {
-        //TODO: Display each character in letters, making sure to blank the screen between letters
+    public void flashSequence(String letters) throws InterruptedException {
+        // Display each character in letters, making sure to blank the screen between letters
+        for (int i = 0; i < letters.length(); i++) {
+            drawFrame(letters.substring(i, i + 1));
+            breakFor(1000);
+            drawFrame("");
+            breakFor(500);
+        }
     }
 
+    private void breakFor(int time) throws InterruptedException {
+        Thread.sleep(time);
+    }
     public String solicitNCharsInput(int n) {
-        //TODO: Read n letters of player input
-        return null;
+        // Read n letters of player input
+        char c;
+        int count = 0;
+        String result = "";
+        while (count < n) {
+            if (StdDraw.hasNextKeyTyped()) {
+                c = StdDraw.nextKeyTyped();
+                result += c;
+                drawFrame(result);
+                count += 1;
+            }
+        }
+        return result;
     }
 
-    public void startGame() {
+    public void startGame() throws InterruptedException {
         //TODO: Set any relevant variables before the game starts
-
+        round = 1;
+        gameOver = false;
+        String randomString;
+        String playerInput;
+        String roundString;
         //TODO: Establish Engine loop
+        while (!gameOver) {
+            roundString = "Round : " + round;
+            drawFrame(roundString);
+            breakFor(1000);
+
+            randomString = generateRandomString(round);
+            flashSequence(randomString);
+            playerInput = solicitNCharsInput(round);
+
+            if (playerInput.equals(randomString)) {
+                String right = "you are right!";
+                drawFrame(right);
+                breakFor(1000);
+                round += 1;
+            } else {
+                String gameover = "Game Over! You made it to round: " + round;
+                drawFrame(gameover);
+                breakFor(1000);
+                gameOver = true;
+            }
+        }
     }
 
 }
