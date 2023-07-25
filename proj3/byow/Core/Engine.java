@@ -155,6 +155,7 @@ public class Engine {
        int y = firstRoom.shiftY(1);
        avatarPosition.x = x;
        avatarPosition.y = y;
+       world[avatarPosition.x][avatarPosition.y] = Tileset.AVATAR;
     }
     /**
      *  need to decide the algorithm to generate hallways that link all rooms
@@ -618,6 +619,172 @@ public class Engine {
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
+
+        // draw main menu
+        Engine.drawMainMenu();
+        String selection = selectFromMainMenu();
+        switch (selection) {
+            case "n":
+                String seed;
+                seed = getSeedFromUser().toLowerCase();
+                seed = seed.substring(0, seed.indexOf("s"));
+
+                TETile[][] world = createWorldWithSeed(seed);
+                dealWithInput(world, seed);
+                break;
+            case  "l":
+                loadSavedWorld();
+                break;
+            case "q":
+                System.exit(0);
+                break;
+        }
+    }
+
+    private void dealWithInput(TETile[][] world, String seed) {
+        char c = '!';
+        String log = "";
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                c = StdDraw.nextKeyTyped();
+                if (c == ':' && Engine.quit()) {
+                    quitSave(seed, log);
+                }
+                moveOneStep(world, Character.toString(c));
+                if (isValidMovement(c)) {
+                    log += c;
+                }
+                renderFrame(world);
+            }
+        }
+    }
+
+    private static boolean isValidMovement(char c) {
+        return c == 'w' || c == 's' || c == 'a' || c == 'd';
+    }
+    private static boolean quit() {
+        char c = 0;
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                c = StdDraw.nextKeyTyped();
+                if (Character.toLowerCase(c) == 'q') {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+    private static void quitSave(String seed, String log) {
+        writeFile(log, log.length(), seed);
+        System.exit(0);
+    }
+    private void loadSavedWorld() {
+        SavedFile savedFile = readFile("savedFile.txt");
+        String seed = savedFile.seed;
+        String oldMovements = savedFile.oldMovements;
+        random = new Random(Long.parseLong(seed));
+        TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
+        Engine.fillOut(finalWorldFrame);
+
+
+        finalWorldFrame = interactWithInputString("n" + seed + "s" + oldMovements);
+
+        TERenderer ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+        ter.renderFrame(finalWorldFrame);
+        dealWithInput(finalWorldFrame, seed);
+    }
+    private TETile[][] createWorldWithSeed(String seed) {
+        random = new Random(Long.parseLong(seed));
+        TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
+        Engine.fillOut(finalWorldFrame);
+
+
+        finalWorldFrame = interactWithInputString("n" + seed + "s");
+
+        TERenderer ter = new TERenderer();
+        ter.initialize(WIDTH, HEIGHT);
+        ter.renderFrame(finalWorldFrame);
+        return finalWorldFrame;
+    }
+    private static String getSeedFromUser() {
+        String result = "";
+
+        StdDraw.clear(Color.black);
+        changeFontSize(30);
+
+        StdDraw.text(WIDTH / 2, HEIGHT - 8, "Please input a seed, end with [s]");
+        StdDraw.show();
+
+        char c = '!';
+        while (c != 's') {
+            if (StdDraw.hasNextKeyTyped()) {
+                c = StdDraw.nextKeyTyped();
+                if (Character.isDigit(c)) {
+                    result += c;
+                    drawSeed(result);
+                }
+            }
+        }
+        result += 's';
+        return result;
+    }
+    private static void drawSeed(String result) {
+        StdDraw.clear(Color.black);
+        changeFontSize(30);
+        StdDraw.text(WIDTH / 2, HEIGHT - 8, "Please input a seed, end with [s]");
+
+        changeFontSize(20);
+        StdDraw.text(WIDTH / 2, HEIGHT - 15, "your input : " + result);
+
+        StdDraw.show();
+
+    }
+    private static String selectFromMainMenu() {
+        String result = "";
+        char c;
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                c = StdDraw.nextKeyTyped();
+                if (c == 'n' || c == 'l' || c == 'q') {
+                    return (result + c).toLowerCase();
+                }
+            }
+        }
+    }
+    private static void drawMainMenu() {
+        StdDraw.setCanvasSize(WIDTH / 2 * 16, HEIGHT * 16);
+        Font font = new Font("Monaco", Font.BOLD, 30);
+
+        StdDraw.setFont(font);
+        StdDraw.setXscale(0, WIDTH);
+        StdDraw.setYscale(0, HEIGHT);
+
+        StdDraw.clear(new Color(0, 0, 0));
+
+        StdDraw.enableDoubleBuffering();
+
+        Engine.drawMainMenuHelper();
+
+        StdDraw.show();
+    }
+
+    private static void drawMainMenuHelper() {
+        Engine.changeFontSize(50);
+        StdDraw.setPenColor(Color.white);
+        StdDraw.text(WIDTH / 2, HEIGHT - 8, "The Game");
+
+        Engine.changeFontSize(20);
+        StdDraw.text(WIDTH / 2, HEIGHT - 15, "New Game (N)");
+        StdDraw.text(WIDTH / 2, HEIGHT - 17, "Load Game (L)");
+        StdDraw.text(WIDTH / 2, HEIGHT - 19, "Quit Game (Q)");
+
+    }
+
+    private static void changeFontSize(int size) {
+        Font font = new Font("Monaco", Font.BOLD, size);
+        StdDraw.setFont(font);
     }
 
     /**
@@ -676,23 +843,17 @@ public class Engine {
         return finalWorldFrame;
     }
 
-    /* todo :
-            2. get input from keyboard
-            4. sava & load
-     */
     public static void main(String[] args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         Engine engine = new Engine();
         //String input = "n123sddddssssss:qddd";
-        String input = "lsssddd:q";
+        //String input = "lsssddd:q";
+        String input = "n123s";
         TETile[][] world = engine.interactWithInputString(input);
-        ter.renderFrame(world);
+        //ter.renderFrame(world);
 
-        while (true) {
-            StdDraw.pause(200);
-            renderFrame(world);
-        }
+        engine.interactWithKeyboard();
 
     }
 }
