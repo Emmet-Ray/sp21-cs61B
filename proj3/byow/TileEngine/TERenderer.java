@@ -98,25 +98,6 @@ public class TERenderer {
             }
         }
 
-        StdDraw.setPenColor(Color.white);
-
-        int x, y;
-        x = (int) StdDraw.mouseX();
-        y = (int) StdDraw.mouseY();
-        if (x < Engine.WIDTH && y < Engine.HEIGHT) {
-            //System.out.println("x : " + x + ", y : " + y);
-            if (world[x][y].equals(Tileset.WALL)) {
-                //System.out.println("will draw a wall");
-                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "WALL");
-            } else if (world[x][y].equals(Tileset.FLOOR)) {
-                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "FLOOR");
-            } else if (world[x][y].equals(Tileset.NOTHING)) {
-                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "NOTHING");
-            } else if (world[x][y].equals(Tileset.AVATAR)) {
-                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "YOU");
-            }
-        }
-
         StdDraw.show();
     }
 }

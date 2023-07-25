@@ -473,6 +473,41 @@ public class Engine {
         }
     }
 
+    private static void renderFrame(TETile[][] world) {
+        int numXTiles = world.length;
+        int numYTiles = world[0].length;
+        StdDraw.clear(new Color(0, 0, 0));
+        for (int x = 0; x < numXTiles; x += 1) {
+            for (int y = 0; y < numYTiles; y += 1) {
+                if (world[x][y] == null) {
+                    throw new IllegalArgumentException("Tile at position x=" + x + ", y=" + y
+                            + " is null.");
+                }
+                world[x][y].draw(x, y);
+            }
+        }
+
+        StdDraw.setPenColor(Color.white);
+
+        int x, y;
+        x = (int) StdDraw.mouseX();
+        y = (int) StdDraw.mouseY();
+        if (x < Engine.WIDTH && y < Engine.HEIGHT) {
+            //System.out.println("x : " + x + ", y : " + y);
+            if (world[x][y].equals(Tileset.WALL)) {
+                //System.out.println("will draw a wall");
+                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "WALL");
+            } else if (world[x][y].equals(Tileset.FLOOR)) {
+                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "FLOOR");
+            } else if (world[x][y].equals(Tileset.NOTHING)) {
+                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "NOTHING");
+            } else if (world[x][y].equals(Tileset.AVATAR)) {
+                StdDraw.text(Engine.WIDTH - 3, Engine.HEIGHT - 1, "YOU");
+            }
+        }
+
+        StdDraw.show();
+    }
 
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
@@ -538,10 +573,10 @@ public class Engine {
         Engine engine = new Engine();
         String seed = "n123s";
         TETile[][] world = engine.interactWithInputString(seed);
-
+        ter.renderFrame(world);
         while (true) {
             StdDraw.pause(200);
-            ter.renderFrame(world);
+            renderFrame(world);
         }
 
     }
