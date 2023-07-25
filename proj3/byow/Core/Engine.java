@@ -136,58 +136,20 @@ public class Engine {
             return p;
         }
     }
+
     /**
-     * Method used for exploring a fresh world. This method should handle all inputs,
-     * including inputs from the main menu.
+     *  select the first room from [existingRooms]
+     *  draw the avatar in the (shiftX(1), shiftY(1))
      */
-    public void interactWithKeyboard() {
+    private void drawAvatar(TETile[][] world) {
+       Room firstRoom = existingRooms.first();
+       int x = firstRoom.shiftX(1);
+       int y = firstRoom.shiftY(1);
+       world[x][y] = Tileset.AVATAR;
     }
-
     /**
-     * Method used for autograding and testing your code. The input string will be a series
-     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The engine should
-     * behave exactly as if the user typed these characters into the engine using
-     * interactWithKeyboard.
-     *
-     * Recall that strings ending in ":q" should cause the game to quite save. For example,
-     * if we do interactWithInputString("n123sss:q"), we expect the game to run the first
-     * 7 commands (n123sss) and then quit and save. If we then do
-     * interactWithInputString("l"), we should be back in the exact same state.
-     *
-     * In other words, both of these calls:
-     *   - interactWithInputString("n123sss:q")
-     *   - interactWithInputString("lww")
-     *
-     * should yield the exact same world state as:
-     *   - interactWithInputString("n123sssww")
-     *
-     * @param input the input string to feed to your program
-     * @return the 2D TETile[][] representing the state of the world
-     */
-    public TETile[][] interactWithInputString(String input) {
-        // TODO: Fill out this method so that it run the engine using the input
-        // passed in as an argument, and return a 2D tile representation of the
-        // world that would have been drawn if the same inputs had been given
-        // to interactWithKeyboard().
-        //
-        // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
-        // that works for many different input types.
-
-        TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
-        Engine.fillOut(finalWorldFrame);
-
-        // get seed from input string, for now, input just seed
-        String seed = input.substring(1, input.length() - 1) ;
-        System.out.println(seed);
-        random = new Random(Long.parseLong(seed));
-
-        drawRooms(finalWorldFrame);
-        drawHallways(finalWorldFrame);
-        return finalWorldFrame;
-    }
-
-    /**
-     *  todo : need to decide the algorithm to generate hallways that link all rooms
+     *  need to decide the algorithm to generate hallways that link all rooms
+     *          choose random walk algorithm
      *          maybe : dog leg algorithm ???
      * @param world
      */
@@ -234,7 +196,6 @@ public class Engine {
     }
 
     /**
-     *  todo :
      *      different kinds of connections, different kind of position relationships
      */
     private void connectWithClosestRoom_Helper(TETile[][] world, Room currentRoom, Room closest) {
@@ -481,7 +442,7 @@ public class Engine {
      */
     private Position getRandomPosition() {
         int x = RandomUtils.uniform(random, WIDTH - ROOM_WIDTH);
-        int y = RandomUtils.uniform(random, HEIGHT - ROOM_HEIGHT);
+        int y = RandomUtils.uniform(random, HEIGHT - (int)1.5 * ROOM_HEIGHT);
         Position p = new Position(x, y);
         return p;
     }
@@ -508,6 +469,58 @@ public class Engine {
             }
         }
     }
+
+    /**
+     * Method used for exploring a fresh world. This method should handle all inputs,
+     * including inputs from the main menu.
+     */
+    public void interactWithKeyboard() {
+    }
+
+    /**
+     * Method used for autograding and testing your code. The input string will be a series
+     * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The engine should
+     * behave exactly as if the user typed these characters into the engine using
+     * interactWithKeyboard.
+     *
+     * Recall that strings ending in ":q" should cause the game to quite save. For example,
+     * if we do interactWithInputString("n123sss:q"), we expect the game to run the first
+     * 7 commands (n123sss) and then quit and save. If we then do
+     * interactWithInputString("l"), we should be back in the exact same state.
+     *
+     * In other words, both of these calls:
+     *   - interactWithInputString("n123sss:q")
+     *   - interactWithInputString("lww")
+     *
+     * should yield the exact same world state as:
+     *   - interactWithInputString("n123sssww")
+     *
+     * @param input the input string to feed to your program
+     * @return the 2D TETile[][] representing the state of the world
+     */
+    public TETile[][] interactWithInputString(String input) {
+        // TODO: Fill out this method so that it run the engine using the input
+        // passed in as an argument, and return a 2D tile representation of the
+        // world that would have been drawn if the same inputs had been given
+        // to interactWithKeyboard().
+        //
+        // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
+        // that works for many different input types.
+
+        TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
+        Engine.fillOut(finalWorldFrame);
+
+        // get seed from input string, for now, input just seed
+        String seed = input.substring(1, input.length() - 1) ;
+        System.out.println(seed);
+        random = new Random(Long.parseLong(seed));
+
+        drawRooms(finalWorldFrame);
+        drawAvatar(finalWorldFrame);
+        drawHallways(finalWorldFrame);
+        return finalWorldFrame;
+    }
+
     public static void main(String[] args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
