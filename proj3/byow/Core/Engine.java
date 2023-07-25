@@ -4,6 +4,7 @@ import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 import edu.princeton.cs.algs4.Graph;
+import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -28,7 +29,8 @@ public class Engine {
     private TreeSet<Room> existingRooms = new TreeSet<>();
 
     private enum DIRECTION {LEFT_ABOVE, RIGHT_ABOVE, LEFT_BELOW, RIGHT_BELOW};
-
+    // mark where avatar is
+    private Position avatarPosition;
 
 
     private class Position {
@@ -145,6 +147,7 @@ public class Engine {
        Room firstRoom = existingRooms.first();
        int x = firstRoom.shiftX(1);
        int y = firstRoom.shiftY(1);
+       avatarPosition = new Position(x, y);
        world[x][y] = Tileset.AVATAR;
     }
     /**
@@ -470,6 +473,7 @@ public class Engine {
         }
     }
 
+
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
@@ -518,16 +522,27 @@ public class Engine {
         drawRooms(finalWorldFrame);
         drawAvatar(finalWorldFrame);
         drawHallways(finalWorldFrame);
+
         return finalWorldFrame;
     }
 
+    /* todo :
+            1. HUD
+            2. get input from keyboard / string
+            3. move avatar
+            4. sava & load
+     */
     public static void main(String[] args) {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         Engine engine = new Engine();
         String seed = "n123s";
         TETile[][] world = engine.interactWithInputString(seed);
-        ter.renderFrame(world);
+
+        while (true) {
+            StdDraw.pause(200);
+            ter.renderFrame(world);
+        }
 
     }
 }
