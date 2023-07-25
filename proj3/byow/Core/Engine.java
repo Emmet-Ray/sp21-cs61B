@@ -849,8 +849,8 @@ public class Engine {
         Engine engine = new Engine();
         //String input = "n123sddddssssss:qddd";
         //String input = "lsssddd:q";
-        String input = "n123s";
-        TETile[][] world = engine.interactWithInputString(input);
+        //String input = "n123s";
+        //TETile[][] world = engine.interactWithInputString(input);
         //ter.renderFrame(world);
 
         engine.interactWithKeyboard();
